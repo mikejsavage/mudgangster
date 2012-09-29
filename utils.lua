@@ -164,6 +164,30 @@ function mud.printr( str, fg, bg, bold )
 	mud.drawMain()
 end
 
+function mud.enable( ... )
+	local things = { ... }
+
+	if type( things[ 1 ] ) == "table" then
+		things = things[ 1 ]
+	end
+
+	for _, thing in ipairs( things ) do
+		thing:enable()
+	end
+end
+
+function mud.disable( ... )
+	local things = { ... }
+
+	if type( things[ 1 ] ) == "table" then
+		things = things[ 1 ]
+	end
+
+	for _, thing in ipairs( things ) do
+		thing:enable()
+	end
+end
+
 local ColourSequences = {
 	d = 0,
 	r = 31,

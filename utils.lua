@@ -167,7 +167,7 @@ end
 function mud.enable( ... )
 	local things = { ... }
 
-	if type( things[ 1 ] ) == "table" then
+	if not things[ 1 ].enable then
 		things = things[ 1 ]
 	end
 
@@ -179,7 +179,7 @@ end
 function mud.disable( ... )
 	local things = { ... }
 
-	if type( things[ 1 ] ) == "table" then
+	if not things[ 1 ].enable then
 		things = things[ 1 ]
 	end
 

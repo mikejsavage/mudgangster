@@ -196,7 +196,7 @@ local function handleData( data )
 	end
 end
 
-local function handleCommand( input, display )
+local function handleCommand( input, hide )
 	if not alias.doAlias( input ) then
 		if not mud.connected then
 			mud.print( "\n#s> You're not connected..." )
@@ -204,7 +204,7 @@ local function handleCommand( input, display )
 			return
 		end
 
-		if display and input ~= "" then
+		if not hide and input ~= "" then
 			local toShow = ( showInput and input or ( "*" ):rep( input:len() ) ) .. "\n"
 
 			if receiving then

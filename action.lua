@@ -28,7 +28,7 @@ local function genericActions( actions )
 				local command = callback
 
 				callback = function()
-					mud.input( command, false )
+					mud.input( command, true )
 				end
 			end
 

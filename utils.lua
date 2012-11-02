@@ -184,7 +184,7 @@ function mud.disable( ... )
 	end
 
 	for _, thing in ipairs( things ) do
-		thing:enable()
+		thing:disable()
 	end
 end
 

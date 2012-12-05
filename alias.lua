@@ -82,8 +82,8 @@ function mud.alias( command, handler, ... )
 	if type( handler ) == "string" then
 		local command = handler
 
-		handler = function()
-			mud.input( command )
+		handler = function( args )
+			mud.input( command % args )
 		end
 	end
 

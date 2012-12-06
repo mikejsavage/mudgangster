@@ -238,7 +238,7 @@ local function handleMacro( key, shift, ctrl, alt )
 		key = "s" .. key
 	end
 
-	if control then
+	if ctrl then
 		key = "c" .. key
 	end
 

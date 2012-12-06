@@ -9,7 +9,13 @@ local function doAlias( line )
 
 		for i = 1, #alias.callbacks do
 			local callback = alias.callbacks[ i ]
-			local _, subs = args:gsub( callback.pattern, callback.callback )
+			local ok, err, subs = pcall( string.gsub, args, callback.pattern, callback.callback )
+
+			if not ok then
+				mud.print( debug.traceback( "\n#s> alias callback failed: %s" % err ) )
+
+				return true
+			end
 
 			if subs ~= 0 then
 				badSyntax = false

@@ -10,7 +10,11 @@ function string.plural( count, plur, sing )
 	return count == 1 and ( sing or "" ) or ( plur or "s" )
 end
 
-function string.startsWith( self, needle )
+function string.startsWith( self, needle, ignoreCase )
+	if ignoreCase then
+		return self:lower():sub( 1, needle:len() ) == needle:lower()
+	end
+
 	return self:sub( 1, needle:len() ) == needle
 end
 

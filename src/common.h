@@ -5,6 +5,7 @@ typedef enum { false, true } bool;
 
 #include <X11/Xlib.h>
 
+#include "config.h"
 #include "textbox.h"
 
 struct
@@ -92,11 +93,3 @@ struct
 
 #define MIN( a, b ) ( ( a ) < ( b ) ? ( a ) : ( b ) )
 #define MAX( a, b ) ( ( a ) > ( b ) ? ( a ) : ( b ) )
-
-#define PADDING 3
-#define SPACING 1
-
-#define OUTPUT_MAX_LINES 131072
-#define CHAT_ROWS 7
-
-#define MAX_INPUT_HISTORY 128

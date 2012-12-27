@@ -215,6 +215,6 @@ function string.parseColours( message )
 			return "\27[1m\27[%dm" % { ColourSequences[ sequence ] }
 		end
 
-		return "\27[%sm\27[0m" % { ColourSequences[ sequence ] }
+		return "\27[0m\27[%dm" % { ColourSequences[ sequence ] }
 	end ):gsub( "##", "#" ) )
 end

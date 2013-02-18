@@ -167,11 +167,11 @@ void textbox_draw( TextBox* self )
 					int charsToPrint = MIN( remainingChars, self->cols - col );
 
 					int x = self->x + ( Style.font.width * col );
-					int y = lineTop + ( ( Style.font.height + SPACING ) * row ) + Style.font.ascent + SPACING;
+					int y = lineTop + ( ( Style.font.height + SPACING ) * row );
 
 					if( y >= self->y )
 					{
-						XDrawString( UI.display, UI.window, UI.gc, x, y, node->buffer + pos, charsToPrint );
+						XDrawString( UI.display, UI.window, UI.gc, x, y + Style.font.ascent + SPACING, node->buffer + pos, charsToPrint );
 					}
 
 					pos += charsToPrint;

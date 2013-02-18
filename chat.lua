@@ -50,7 +50,7 @@ local function dataCoro( client )
 			if command == CommandBytes.all or command == CommandBytes.pm or command == CommandBytes.message then
 				local message = args:match( "^\n*(.-)\n*$" )
 
-				handleChat( message )
+				handleChat( message:gsub( "\r", "" ) )
 			end
 
 			return ""

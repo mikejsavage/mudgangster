@@ -23,7 +23,7 @@ function string.commas( num )
 
 	local out = ""
 
-	while num > 1000 do
+	while num >= 1000 do
 		out = ( ",%03d%s" ):format( num % 1000, out )
 
 		num = math.floor( num / 1000 )
@@ -82,6 +82,7 @@ local function genericPrint( message, main, chat )
 
 	local Sequences = {
 		d = setFG( 7 ),
+		k = setFG( 0 ),
 		r = setFG( 1 ),
 		g = setFG( 2 ),
 		y = setFG( 3 ),
@@ -194,6 +195,7 @@ end
 
 local ColourSequences = {
 	d = 0,
+	k = 30,
 	r = 31,
 	g = 32,
 	y = 33,

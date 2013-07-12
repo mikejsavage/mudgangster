@@ -120,6 +120,9 @@ local function handleChat( message )
 	mud.drawMain()
 	mud.drawChat()
 
+	action.doChatActions( noAnsi )
+	action.doChatAnsiActions( message )
+
 	fg = oldFG
 	bg = oldBG
 	bold = oldBold

@@ -5,6 +5,8 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
+#include <X11/Xutil.h>
+
 #include "common.h"
 #include "ui.h"
 
@@ -132,6 +134,20 @@ static int mud_setHandlers( lua_State* L )
 	return 0;
 }
 
+static int mud_urgent( lua_State* L )
+{
+	PRETEND_TO_USE( L );
+
+	if( !UI.hasFocus ) {
+		XWMHints* hints = XGetWMHints( UI.display, UI.window );
+		hints->flags |= XUrgencyHint;
+		XSetWMHints( UI.display, UI.window, hints );
+		XFree( hints );
+	}
+
+	return 0;
+}
+
 void script_init()
 {
 	mud_handleXEvents( NULL );
@@ -163,7 +179,9 @@ void script_init()
 
 	lua_pushcfunction( L, mud_setHandlers );
 
-	if( lua_pcall( L, 9, 0, -11 ) )
+	lua_pushcfunction( L, mud_urgent );
+
+	if( lua_pcall( L, 10, 0, -11 ) )
 	{
 		printf( "Error running main.lua: %s\n", lua_tostring( L, -1 ) );
 

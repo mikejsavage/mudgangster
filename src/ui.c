@@ -233,6 +233,24 @@ void eventKeyPress( XEvent* event )
 	#undef ADD_MACRO
 }
 
+void eventFocusOut( XEvent* event ) {
+	PRETEND_TO_USE( event );
+
+	UI.hasFocus = 0;
+}
+
+void eventFocusIn( XEvent* event )
+{
+	PRETEND_TO_USE( event );
+
+	UI.hasFocus = 1;
+
+	XWMHints* hints = XGetWMHints( UI.display, UI.window );
+	hints->flags &= ~XUrgencyHint;
+	XSetWMHints( UI.display, UI.window, hints );
+	XFree( hints );
+}
+
 void ( *EventHandler[ LASTEvent ] ) ( XEvent* ) =
 {
 	[ ButtonPress ] = eventButtonPress,
@@ -241,6 +259,8 @@ void ( *EventHandler[ LASTEvent ] ) ( XEvent* ) =
 	[ ConfigureNotify ] = eventResize,
 	[ Expose ] = eventExpose,
 	[ KeyPress ] = eventKeyPress,
+	[ FocusOut ] = eventFocusOut,
+	[ FocusIn ] = eventFocusIn,
 };
 
 void ui_handleXEvents()
@@ -352,12 +372,16 @@ void ui_init()
 	XSetWindowAttributes attr =
 	{
 		.background_pixel = Style.bg,
-		.event_mask = ExposureMask | StructureNotifyMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask,
+		.event_mask = ExposureMask | StructureNotifyMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask | FocusChangeMask,
 		.colormap = UI.colorMap,
 	};
 
 	UI.window = XCreateWindow( UI.display, root, 0, 0, 800, 600, 0, depth, InputOutput, visual, CWBackPixel | CWEventMask | CWColormap, &attr );
 	UI.gc = XCreateGC( UI.display, UI.window, 0, NULL );
+
+	XWMHints* hints = XAllocWMHints();
+	XSetWMHints( UI.display, UI.window, hints );
+	XFree( hints );
 
 	Cursor cursor = XCreateFontCursor( UI.display, XC_xterm );
 	XDefineCursor( UI.display, UI.window, cursor );

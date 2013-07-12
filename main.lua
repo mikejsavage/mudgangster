@@ -18,7 +18,7 @@ require( "connect" ).init( handlers.data )
 local xFD, handleXEvents,
 	printMain, newlineMain, drawMain,
 	printChat, newlineChat, drawChat,
-	setHandlers = ...
+	setHandlers, urgent = ...
 
 mud.printMain = printMain
 mud.newlineMain = newlineMain
@@ -27,6 +27,8 @@ mud.drawMain = drawMain
 mud.printChat = printChat
 mud.newlineChat = newlineChat
 mud.drawChat = drawChat
+
+mud.urgent = urgent
 
 setHandlers( handlers.input, handlers.macro, handlers.close )
 

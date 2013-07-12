@@ -23,6 +23,8 @@ struct
 
 	int width;
 	int height;
+
+	int hasFocus;
 } UI;
 
 typedef struct

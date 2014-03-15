@@ -139,6 +139,8 @@ local function genericPrint( message, main, chat )
 	if chat then
 		mud.drawChat()
 	end
+
+	mud.handleXEvents()
 end
 
 function mud.print( form, ... )

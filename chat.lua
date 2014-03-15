@@ -145,6 +145,25 @@ mud.alias( "/call", {
 	[ "^(%S+)[%s:]+(%d+)$" ] = call,
 }, "<address> [port]" )
 
+local function sendPM( client, message )
+	local named = "\nHirve chats to you, '" .. message .. "'"
+	local data = CommandBytes.pm .. named .. "\n\255"
+
+	client.socket:send( data )
+end
+
+mud.alias( "/silentpm", {
+	[ "^(%S+)%s+(.-)$" ] = function( name, message )
+		local client = clientFromName( name )
+
+		if client then
+			local coloured = message:parseColours()
+
+			sendPM( client, coloured )
+		end
+	end,
+} )
+
 mud.alias( "/pm", {
 	[ "^(%S+)%s+(.-)$" ] = function( name, message )
 		local client = clientFromName( name )
@@ -152,10 +171,7 @@ mud.alias( "/pm", {
 		if client then
 			local coloured = message:parseColours()
 
-			local named = "\nHirve chats to you, '" .. coloured .. "'"
-			local data = CommandBytes.pm .. named .. "\n\255"
-
-			client.socket:send( data )
+			sendPM( client, coloured )
 
 			local toPrint = ( "You chat to %s, '" % client.name ) .. coloured .. "'"
 

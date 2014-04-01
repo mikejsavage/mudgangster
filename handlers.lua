@@ -12,6 +12,7 @@ local fg = 7
 local bg = 0
 
 local lastWasChat = false
+local lastWasGA = false
 
 local receiving = false
 local showInput = true
@@ -69,15 +70,18 @@ local function printPendingInputs()
 
 	for i = 1, #pendingInputs do
 		mud.printr( pendingInputs[ i ] )
+
+		lastWasGA = false
 	end
 
 	pendingInputs = { }
 end
 
 local function handleChat( message )
-	if not message then
-		lastWasChat = true
+	lastWasChat = true
+	lastWasGA = false
 
+	if not message then
 		return
 	end
 
@@ -126,8 +130,6 @@ local function handleChat( message )
 	fg = oldFG
 	bg = oldBG
 	bold = oldBold
-
-	lastWasChat = true
 end
 
 local function handleData( data )
@@ -148,6 +150,14 @@ local function handleData( data )
 		dataBuffer = dataBuffer .. "\n"
 
 		for line in dataBuffer:gmatch( "([^\n]*)\n" ) do
+			if lastWasGA then
+				if line ~= "" then
+					mud.newlineMain()
+				end
+
+				lastWasGA = false
+			end
+
 			if lastWasChat then
 				mud.newlineMain()
 
@@ -185,6 +195,7 @@ local function handleData( data )
 			end
 
 			if hasGA then
+				lastWasGA = true
 				printPendingInputs()
 			end
 
@@ -218,6 +229,8 @@ local function handleCommand( input, hide )
 
 					lastWasChat = false
 				end
+
+				lastWasGA = false
 
 				mud.printr( toShow )
 			end

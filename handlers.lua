@@ -174,29 +174,27 @@ local function handleData( data )
 			action.doPreActions( noAnsi )
 			action.doAnsiPreActions( clean )
 
-			if not gagged then
-				local subbed = sub.doSubs( clean )
+			local subbed = sub.doSubs( clean )
 
-				for text, opts, escape in ( subbed .. "\27[m" ):gmatch( "(.-)\27%[([%d;]*)(%a)" ) do
-					if text ~= "" then
-						mud.printMain( text, fg, bg, bold )
-					end
-
-					for opt in opts:gmatch( "([^;]+)" ) do
-						if Escapes[ escape ][ opt ] then
-							Escapes[ escape ][ opt ]()
-						end
-					end
+			for text, opts, escape in ( subbed .. "\27[m" ):gmatch( "(.-)\27%[([%d;]*)(%a)" ) do
+				if text ~= "" and not gagged then
+					mud.printMain( text, fg, bg, bold )
 				end
 
-				if not hasGA then
-					mud.newlineMain()
+				for opt in opts:gmatch( "([^;]+)" ) do
+					if Escapes[ escape ][ opt ] then
+						Escapes[ escape ][ opt ]()
+					end
 				end
 			end
 
 			if hasGA then
 				lastWasGA = true
 				printPendingInputs()
+			else
+				if not gagged then
+					mud.newlineMain()
+				end
 			end
 
 			action.doActions( noAnsi )

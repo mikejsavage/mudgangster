@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
+#include <err.h>
 
 #include <X11/Xutil.h>
 #include <X11/XKBlib.h>
@@ -13,15 +13,58 @@
 
 Atom wmDeleteWindow;
 
-void statusDraw()
+typedef struct {
+	char c;
+
+	Colour fg;
+	bool bold;
+} StatusChar;
+
+static StatusChar* statusContents = NULL;
+static size_t statusCapacity = 256;
+static size_t statusLen = 0;
+
+void ui_statusDraw()
 {
 	XSetForeground( UI.display, UI.gc, Style.statusBG );
 	XFillRectangle( UI.display, UI.window, UI.gc, 0, UI.height - ( PADDING * 4 ) - ( Style.font.height * 2 ), UI.width, Style.font.height + ( PADDING * 2 ) );
 
-	XSetForeground( UI.display, UI.gc, Style.statusFG );
-	XDrawString( UI.display, UI.window, UI.gc, PADDING, UI.height - ( PADDING * 3 ) - Style.font.height - Style.font.descent, STRL( "legit statusbar" ) );
+	for( size_t i = 0; i < statusLen; i++ )
+	{
+		StatusChar sc = statusContents[ i ];
 
-	// TODO
+		XSetFont( UI.display, UI.gc, ( sc.bold ? Style.fontBold : Style.font ).font->fid );
+		XSetForeground( UI.display, UI.gc, Style.colours[ sc.bold ][ sc.fg ] );
+
+		int x = PADDING + i * Style.font.width;
+		int y = UI.height - ( PADDING * 3 ) - Style.font.height - Style.font.descent;
+		XDrawString( UI.display, UI.window, UI.gc, x, y, &sc.c, 1 );
+	}
+}
+
+void ui_statusClear()
+{
+	statusLen = 0;
+}
+
+void ui_statusAdd( const char c, const Colour fg, const bool bold )
+{
+	if( ( statusLen + 1 ) * sizeof( StatusChar ) > statusCapacity )
+	{
+		size_t newcapacity = statusCapacity * 2;
+		StatusChar* newcontents = realloc( statusContents, newcapacity );
+
+		if( !newcontents )
+		{
+			return err( 1, "oom" );
+		}
+
+		statusContents = newcontents;
+		statusCapacity = newcapacity;
+	}
+
+	statusContents[ statusLen ] = ( StatusChar ) { c, fg, bold };
+	statusLen++;
 }
 
 void ui_draw()
@@ -29,7 +72,7 @@ void ui_draw()
 	XClearWindow( UI.display, UI.window );
 
 	input_draw();
-	statusDraw();
+	ui_statusDraw();
 
 	textbox_draw( UI.textChat );
 	textbox_draw( UI.textMain );
@@ -319,7 +362,7 @@ void initStyle()
 
 	SETXCOLOR( Style.bg, Style.xBG, "#1a1a1a" );
 	SETXCOLOR( Style.fg, Style.xFG, "#b6c2c4" );
-	
+
 	SETCOLOR( Style.cursor, "#00ff00" );
 
 	SETCOLOR( Style.statusBG, "#333333" );
@@ -366,6 +409,11 @@ void ui_init()
 
 	UI.textMain = textbox_new( OUTPUT_MAX_LINES );
 	UI.textChat = textbox_new( OUTPUT_MAX_LINES );
+	statusContents = malloc( statusCapacity * sizeof( StatusChar ) );
+
+	if( statusContents == NULL ) {
+		err( 1, "oom" );
+	}
 
 	initStyle();
 
@@ -397,6 +445,8 @@ void ui_init()
 void ui_end()
 {
 	textbox_free( UI.textMain );
+	textbox_free( UI.textChat );
+	free( statusContents );
 
 	XFreeFont( UI.display, Style.font.font );
 	XFreeFont( UI.display, Style.fontBold.font );

@@ -121,6 +121,44 @@ static int mud_drawChat( lua_State* L )
 	return 0;
 }
 
+static int mud_setStatus( lua_State* L )
+{
+	luaL_argcheck( L, lua_type( L, 1 ) == LUA_TTABLE, 1, "expected function" );
+
+	size_t len = lua_objlen( L, 1 );
+
+	ui_statusClear();
+
+	for( size_t i = 0; i < len; i++ )
+	{
+		lua_pushnumber( L, i + 1 );
+		lua_gettable( L, 1 );
+
+		lua_pushliteral( L, "text" );
+		lua_gettable( L, 2 );
+		size_t seglen;
+		const char* str = lua_tolstring( L, -1, &seglen );
+
+		lua_pushliteral( L, "fg" );
+		lua_gettable( L, 2 );
+		const Colour fg = lua_tointeger( L, -1 );
+
+		lua_pushliteral( L, "fg" );
+		lua_gettable( L, 2 );
+		const bool bold = lua_toboolean( L, -1 );
+
+		for( size_t j = 0; j < seglen; j++ ) {
+			ui_statusAdd( str[ j ], fg, bold );
+		}
+
+		lua_pop( L, 4 );
+	}
+
+	ui_statusDraw();
+
+	return 0;
+}
+
 static int mud_setHandlers( lua_State* L )
 {
 	luaL_argcheck( L, lua_type( L, 1 ) == LUA_TFUNCTION, 1, "expected function" );
@@ -181,7 +219,9 @@ void script_init()
 
 	lua_pushcfunction( L, mud_urgent );
 
-	if( lua_pcall( L, 10, 0, -11 ) )
+	lua_pushcfunction( L, mud_setStatus );
+
+	if( lua_pcall( L, 11, 0, -13 ) )
 	{
 		printf( "Error running main.lua: %s\n", lua_tostring( L, -1 ) );
 

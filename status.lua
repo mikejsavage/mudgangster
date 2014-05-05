@@ -35,6 +35,8 @@ local function drawBar()
 	end
 
 	setStatus( status )
+
+	mud.handleXEvents()
 end
 
 function mud.bar( priority )

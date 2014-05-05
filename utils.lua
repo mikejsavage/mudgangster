@@ -59,7 +59,7 @@ function enforce( var, name, ... )
 	for _, accept in ipairs( acceptable ) do
 		if type( var ) == accept then
 			ok = true
-			
+
 			break
 		end
 	end

@@ -42,10 +42,10 @@ function mud.bar( priority )
 		priority = priority,
 		text = "",
 
-		set = function( self, text )
+		set = function( self, form, ... )
 			enforce( text, "text", "string" )
 
-			self.text = string.parseColours( text )
+			self.text = string.parseColours( form:format( ... ) )
 			drawBar()
 		end,
 	}

@@ -76,6 +76,10 @@ void ui_draw()
 
 	textbox_draw( UI.textChat );
 	textbox_draw( UI.textMain );
+
+	int spacerY = ( 2 * PADDING ) + ( Style.font.height + SPACING ) * CHAT_ROWS;
+	XSetForeground( UI.display, UI.gc, Style.statusBG );
+	XFillRectangle( UI.display, UI.window, UI.gc, 0, spacerY, UI.width, 1 );
 }
 
 void eventButtonPress( XEvent* event )
@@ -115,10 +119,10 @@ void eventResize( XEvent* event )
 	textbox_setpos( UI.textChat, PADDING, PADDING );
 	textbox_setsize( UI.textChat, UI.width - ( 2 * PADDING ), ( Style.font.height + SPACING ) * CHAT_ROWS );
 
-	textbox_setpos( UI.textMain, PADDING, ( PADDING * 2 ) + CHAT_ROWS * ( Style.font.height + SPACING ) );
+	textbox_setpos( UI.textMain, PADDING, ( PADDING * 2 ) + CHAT_ROWS * ( Style.font.height + SPACING ) + 1 );
 	textbox_setsize( UI.textMain, UI.width - ( 2 * PADDING ), UI.height
 		- ( ( ( Style.font.height + SPACING ) * CHAT_ROWS ) + ( PADDING * 2 ) )
-		- ( ( Style.font.height * 2 ) + ( PADDING * 5 ) )
+		- ( ( Style.font.height * 2 ) + ( PADDING * 5 ) ) - 1
 	);
 }
 

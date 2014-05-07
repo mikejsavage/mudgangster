@@ -407,7 +407,7 @@ void ui_init()
 	UI.height = -1;
 
 	Window root = XRootWindow( UI.display, UI.screen );
-	int depth = XDefaultDepth( UI.display, UI.screen );
+	UI.depth = XDefaultDepth( UI.display, UI.screen );
 	Visual* visual = XDefaultVisual( UI.display, UI.screen );
 	UI.colorMap = XDefaultColormap( UI.display, UI.screen );
 
@@ -428,7 +428,7 @@ void ui_init()
 		.colormap = UI.colorMap,
 	};
 
-	UI.window = XCreateWindow( UI.display, root, 0, 0, 800, 600, 0, depth, InputOutput, visual, CWBackPixel | CWEventMask | CWColormap, &attr );
+	UI.window = XCreateWindow( UI.display, root, 0, 0, 800, 600, 0, UI.depth, InputOutput, visual, CWBackPixel | CWEventMask | CWColormap, &attr );
 	UI.gc = XCreateGC( UI.display, UI.window, 0, NULL );
 
 	XWMHints* hints = XAllocWMHints();

@@ -121,13 +121,19 @@ void textbox_newline( TextBox* self )
 
 void textbox_draw( TextBox* self )
 {
+	if( self->width == 0 || self->height == 0 ) {
+		return;
+	}
+
+	Pixmap doublebuf = XCreatePixmap( UI.display, UI.window, self->width, self->height, UI.depth );
+
 	XSetForeground( UI.display, UI.gc, Style.bg );
-	XFillRectangle( UI.display, UI.window, UI.gc, self->x, self->y, self->width, self->height );
+	XFillRectangle( UI.display, doublebuf, UI.gc, 0, 0, self->width, self->height );
 
 	int rowsRemaining = self->rows;
 	int linesRemaining = self->numLines - self->scrollDelta + 1;
 
-	int lineTop = self->y + self->height;
+	int lineTop = self->height;
 	int linesPrinted = 0;
 
 	int firstLine = self->head + self->numLines - self->scrollDelta;
@@ -166,12 +172,12 @@ void textbox_draw( TextBox* self )
 				{
 					int charsToPrint = MIN( remainingChars, self->cols - col );
 
-					int x = self->x + ( Style.font.width * col );
+					int x = ( Style.font.width * col );
 					int y = lineTop + ( ( Style.font.height + SPACING ) * row );
 
-					if( y >= self->y )
+					if( y >= 0 )
 					{
-						XDrawString( UI.display, UI.window, UI.gc, x, y + Style.font.ascent + SPACING, node->buffer + pos, charsToPrint );
+						XDrawString( UI.display, doublebuf, UI.gc, x, y + Style.font.ascent + SPACING, node->buffer + pos, charsToPrint );
 					}
 
 					pos += charsToPrint;
@@ -197,4 +203,7 @@ void textbox_draw( TextBox* self )
 
 		linesPrinted++;
 	}
+
+	XCopyArea( UI.display, doublebuf, UI.window, UI.gc, 0, 0, self->width, self->height, self->x, self->y );
+	XFreePixmap( UI.display, doublebuf );
 }

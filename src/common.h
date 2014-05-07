@@ -23,6 +23,7 @@ struct
 
 	int width;
 	int height;
+	int depth;
 
 	int hasFocus;
 } UI;

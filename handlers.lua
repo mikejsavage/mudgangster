@@ -1,5 +1,6 @@
 local action = require( "action" )
 local alias = require( "alias" )
+local intercept = require( "intercept" )
 local gag = require( "gag" )
 local macro = require( "macro" )
 local sub = require( "sub" )
@@ -215,6 +216,8 @@ local function handleCommand( input, hide )
 
 			return
 		end
+
+		intercept.doIntercept( input )
 
 		if not hide and input ~= "" then
 			local toShow = ( showInput and input or ( "*" ):rep( input:len() ) ) .. "\n"

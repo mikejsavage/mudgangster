@@ -98,8 +98,8 @@ local function dataHandler( client, loop, watcher )
 	mud.handleXEvents()
 end
 
-function mud.chat( form, ... )
-	local named = "\nHirve " .. form:format( ... )
+function mud.chatns( form, ... )
+	local named = "\nHirve" .. form:format( ... )
 	local data = CommandBytes.all .. named:parseColours() .. "\n\255"
 
 	for _, client in ipairs( Clients ) do
@@ -110,6 +110,10 @@ function mud.chat( form, ... )
 
 	mud.printb( "#lr%s", named )
 	handleChat()
+end
+
+function mud.chat( form, ... )
+	mud.chatns( " " .. form, ... )
 end
 
 local function call( address, port )

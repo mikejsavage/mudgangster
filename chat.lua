@@ -6,6 +6,7 @@ local CommandBytes = {
 	all = "\4",
 	pm = "\5",
 	message = "\7",
+	version = "\19",
 }
 
 local Clients = { }
@@ -133,6 +134,11 @@ local function call( address, port )
 			ev.IO.new( function( loop, watcher )
 				dataHandler( client, loop, watcher )
 			end, sock:getfd(), ev.READ ):start( loop )
+
+			ev.IO.new( function( loop, watcher )
+				client.socket:send( CommandBytes.version .. "MudGangster" .. "\255" )
+				watcher:stop( loop )
+			end, sock:getfd(), ev.WRITE ):start( loop )
 		else
 			mud.print( "\n#s> Failed to call %s:%d", address, port )
 		end

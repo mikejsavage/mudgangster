@@ -85,11 +85,29 @@ function Client:new( socket, address, port )
 	return client
 end
 
+function Client:kill()
+	if self.state == "killed" then
+		return
+	end
+
+	mud.print( "\n#s> Disconnected from %s!", self.name )
+
+	self.state = "killed"
+	self.socket:shutdown()
+
+	for i, client in ipairs( Clients ) do
+		if client == self then
+			table.remove( Clients, i )
+			break
+		end
+	end
+end
+
 local function dataHandler( client, loop, watcher )
 	local _, err, data = client.socket:receive( "*a" )
 
 	if err == "closed" then
-		client.socket:shutdown()
+		client:kill()
 		watcher:stop( loop )
 
 		return

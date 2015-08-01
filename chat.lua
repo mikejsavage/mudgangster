@@ -173,6 +173,16 @@ mud.alias( "/call", {
 	[ "^(%S+)[%s:]+(%d+)$" ] = call,
 }, "<address> [port]" )
 
+mud.alias( "/hang", {
+	[ "^(%S+)$" ] = function( name )
+		local client = clientFromName( name )
+
+		if client then
+			client:kill()
+		end
+	end,
+} )
+
 local function sendPM( client, message )
 	local named = "\nHirve chats to you, '" .. message .. "'"
 	local data = CommandBytes.pm .. named .. "\n\255"

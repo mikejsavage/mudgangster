@@ -8,6 +8,10 @@
 #include "common.h"
 #include "ui.h"
 
+#if LUA_VERSION_NUM < 502
+#define luaL_len lua_objlen
+#endif
+
 static lua_State * lua;
 
 static int inputHandlerIdx = LUA_NOREF;
@@ -43,7 +47,7 @@ void script_handleClose() {
 	lua_call( lua, 0, 0 );
 }
 
-// namespace {
+namespace {
 
 extern "C" int mud_handleXEvents( lua_State * ) {
 	ui_handleXEvents();
@@ -52,7 +56,7 @@ extern "C" int mud_handleXEvents( lua_State * ) {
 
 static void generic_print( TextBox * tb, lua_State * L ) {
 	const char* str = luaL_checkstring( L, 1 );
-	size_t len = lua_objlen( L, 1 );
+	size_t len = luaL_len( L, 1 );
 
 	Colour fg = Colour( luaL_checkinteger( L, 2 ) );
 	Colour bg = Colour( luaL_checkinteger( L, 3 ) );
@@ -94,7 +98,7 @@ extern "C" int mud_drawChat( lua_State * L ) {
 extern "C" int mud_setStatus( lua_State * L ) {
 	luaL_argcheck( L, lua_type( L, 1 ) == LUA_TTABLE, 1, "expected function" );
 
-	size_t len = lua_objlen( L, 1 );
+	size_t len = luaL_len( L, 1 );
 
 	ui_statusClear();
 
@@ -151,20 +155,19 @@ extern "C" int mud_urgent( lua_State * L ) {
 	return 0;
 }
 
-// } // anon namespace
+} // anon namespace
 
 void script_init() {
 	mud_handleXEvents( NULL ); // TODO: why is this here?
 
-	lua = lua_open();
+	lua = luaL_newstate();
 	luaL_openlibs( lua );
 
 	lua_getglobal( lua, "debug" );
 	lua_getfield( lua, -1, "traceback" );
 	lua_remove( lua, -2 );
 
-	if( luaL_loadfile( lua, "main.lua" ) )
-	{
+	if( luaL_loadfile( lua, "main.lua" ) ) {
 		printf( "Error reading main.lua: %s\n", lua_tostring( lua, -1 ) );
 
 		exit( 1 );
@@ -187,8 +190,7 @@ void script_init() {
 
 	lua_pushcfunction( lua, mud_setStatus );
 
-	if( lua_pcall( lua, 11, 0, -13 ) )
-	{
+	if( lua_pcall( lua, 11, 0, -13 ) ) {
 		printf( "Error running main.lua: %s\n", lua_tostring( lua, -1 ) );
 
 		exit( 1 );

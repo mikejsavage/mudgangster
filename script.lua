@@ -26,14 +26,6 @@ local function loadScript( name, path, padding )
 		return
 	end
 
-	local script, err = loadfile( mainPath )
-
-	if not script then
-		throw( err )
-
-		return
-	end
-
 	local env = setmetatable(
 		{
 			require = function( requirePath, ... )
@@ -51,17 +43,19 @@ local function loadScript( name, path, padding )
 					file:close()
 				end )
 
-				local settings = loadfile( settingsPath )
+				local settingsEnv = setmetatable( { }, {
+					__newindex = defaults,
+				} )
+
+				local settings = loadfile( settingsPath, "t", settingsEnv )
 
 				if not settings then
 					return defaults
 				end
 
-				local settingsEnv = setmetatable( { }, {
-					__newindex = defaults,
-				} )
-
-				setfenv( settings, settingsEnv )
+				if _VERSION == "Lua 5.1" then
+					setfenv( settings, settingsEnv )
+				end
 
 				pcall( settings )
 
@@ -74,7 +68,17 @@ local function loadScript( name, path, padding )
 		}
 	)
 
-	setfenv( script, env )
+	local script, err = loadfile( mainPath, "t", env )
+
+	if not script then
+		throw( err )
+
+		return
+	end
+
+	if _VERSION == "Lua 5.1" then
+		setfenv( script, env )
+	end
 
 	local loaded, err = pcall( script )
 

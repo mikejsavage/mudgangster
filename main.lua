@@ -2,6 +2,8 @@ mud = {
 	connected = false,
 }
 
+table.unpack = table.unpack or unpack
+
 require( "utils" )
 
 socket = require( "socket" )

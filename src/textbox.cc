@@ -7,11 +7,12 @@
 #include "common.h"
 #include <stdio.h>
 
-void textbox_init( TextBox * tb ) {
+void textbox_init( TextBox * tb, size_t scrollback ) {
 	*tb = { };
 	// TODO: this is kinda crap
-	tb->text.lines = ( Line * ) calloc( sizeof( Line ), SCROLLBACK_SIZE );
+	tb->text.lines = ( Line * ) calloc( sizeof( Line ), scrollback );
 	tb->text.num_lines = 1;
+	tb->text.max_lines = scrollback;
 }
 
 void textbox_term( TextBox * tb ) {
@@ -29,7 +30,7 @@ void textbox_setsize( TextBox * tb, int width, int height ) {
 }
 
 void textbox_add( TextBox * tb, const char * str, unsigned int len, Colour fg, Colour bg, bool bold ) {
-	Line * line = &tb->text.lines[ ( tb->text.head + tb->text.num_lines ) % SCROLLBACK_SIZE ];
+	Line * line = &tb->text.lines[ ( tb->text.head + tb->text.num_lines ) % tb->text.max_lines ];
 	size_t remaining = MAX_LINE_LENGTH - line->len;
 	size_t n = min( strlen( str ), remaining );
 
@@ -45,13 +46,13 @@ void textbox_add( TextBox * tb, const char * str, unsigned int len, Colour fg, C
 }
 
 void textbox_newline( TextBox * tb ) {
-	if( tb->text.num_lines < SCROLLBACK_SIZE ) {
+	if( tb->text.num_lines < tb->text.max_lines ) {
 		tb->text.num_lines++;
 		return;
 	}
 
 	tb->text.head++;
-	Line * line = &tb->text.lines[ ( tb->text.head + tb->text.num_lines ) % SCROLLBACK_SIZE ];
+	Line * line = &tb->text.lines[ ( tb->text.head + tb->text.num_lines ) % tb->text.max_lines ];
 	line->len = 0;
 }
 
@@ -76,7 +77,7 @@ void textbox_draw( const TextBox * tb ) {
 	size_t tb_cols = tb->width / Style.font.width;
 
 	while( rows_drawn < tb_rows && lines_drawn < tb->text.num_lines ) {
-		const Line & line = tb->text.lines[ ( tb->text.head + tb->text.num_lines - tb->scroll_offset - lines_drawn ) % SCROLLBACK_SIZE ];
+		const Line & line = tb->text.lines[ ( tb->text.head + tb->text.num_lines - tb->scroll_offset - lines_drawn ) % tb->text.max_lines ];
 
 		size_t line_rows = 1 + line.len / tb_cols;
 		if( line.len > 0 && line.len % tb_cols == 0 )

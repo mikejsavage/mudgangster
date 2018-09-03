@@ -344,8 +344,8 @@ void initStyle() {
 }
 
 void ui_init() {
-	textbox_init( &UI.textMain );
-	textbox_init( &UI.textChat );
+	textbox_init( &UI.textMain, SCROLLBACK_SIZE );
+	textbox_init( &UI.textChat, CHAT_ROWS );
 	UI.display = XOpenDisplay( NULL );
 	UI.screen = XDefaultScreen( UI.display );
 	UI.width = -1;

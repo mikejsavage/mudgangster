@@ -32,6 +32,7 @@ struct Text {
 	Line * lines;
 	size_t head;
 	size_t num_lines;
+	size_t max_lines;
 };
 
 struct TextBox {
@@ -49,7 +50,7 @@ struct TextBox {
 	void page_down();
 };
 
-void textbox_init( TextBox * tb );
+void textbox_init( TextBox * tb, size_t scrollback );
 void textbox_term( TextBox * tb );
 
 void textbox_setpos( TextBox * tb, int x, int y );

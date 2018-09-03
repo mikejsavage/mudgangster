@@ -7,6 +7,7 @@
 
 #include "common.h"
 #include "ui.h"
+#include "platform.h"
 
 #if LUA_VERSION_NUM < 502
 #define luaL_len lua_objlen
@@ -157,11 +158,20 @@ extern "C" int mud_urgent( lua_State * L ) {
 
 } // anon namespace
 
+#if PLATFORM_WINDOWS
+extern "C" int luaopen_lpeg( lua_State * L );
+#endif
+
 void script_init() {
 	mud_handleXEvents( NULL ); // TODO: why is this here?
 
 	lua = luaL_newstate();
 	luaL_openlibs( lua );
+
+#if PLATFORM_WINDOWS
+	luaL_requiref( lua, "lpeg", luaopen_lpeg, 0 );
+	lua_pop( lua, 1 );
+#endif
 
 	lua_getglobal( lua, "debug" );
 	lua_getfield( lua, -1, "traceback" );

@@ -2,6 +2,25 @@ mud = {
 	connected = false,
 }
 
+-- local function luarocks_path( opt, orig )
+-- 	local pipe = io.popen( "luarocks path " .. opt, "r" )
+-- 	if not pipe then
+-- 		return nil
+-- 	end
+--
+-- 	local contents = pipe:read( "*all" )
+-- 	pipe:close()
+--
+-- 	if not contents then
+-- 		return orig
+-- 	end
+--
+-- 	return contents:gsub( "%s*$", "" ) .. ";" .. orig
+-- end
+--
+-- package.path = luarocks_path( "--lr-path", package.path )
+-- package.cpath = luarocks_path( "--lr-cpath", package.cpath )
+
 table.unpack = table.unpack or unpack
 
 require( "utils" )

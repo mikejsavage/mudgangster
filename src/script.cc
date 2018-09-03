@@ -13,6 +13,10 @@
 #define luaL_len lua_objlen
 #endif
 
+static const uint8_t lua_bytecode[] = {
+#include "build/lua_bytecode.h"
+};
+
 static lua_State * lua;
 
 static int inputHandlerIdx = LUA_NOREF;
@@ -176,7 +180,7 @@ void script_init() {
 	lua_getfield( lua, -1, "traceback" );
 	lua_remove( lua, -2 );
 
-	if( luaL_loadfile( lua, "main.lua" ) ) {
+	if( luaL_loadbufferx( lua, ( const char * ) lua_bytecode, sizeof( lua_bytecode ), "main", "b" ) != LUA_OK ) {
 		printf( "Error reading main.lua: %s\n", lua_tostring( lua, -1 ) );
 
 		exit( 1 );

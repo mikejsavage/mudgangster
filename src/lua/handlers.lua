@@ -6,6 +6,8 @@ local macro = require( "macro" )
 local sub = require( "sub" )
 local interval = require( "interval" )
 
+local lpeg = require( "lpeg" )
+
 local GA = "\255\249"
 
 local bold = false

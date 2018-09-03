@@ -1,15 +1,19 @@
 all: debug
 .PHONY: debug asan release clean
 
-debug:
+build/lua_bytecode.h: src/lua/action.lua src/lua/alias.lua src/lua/chat.lua src/lua/connect.lua src/lua/event.lua src/lua/gag.lua src/lua/handlers.lua src/lua/intercept.lua src/lua/interval.lua src/lua/macro.lua src/lua/main.lua src/lua/script.lua src/lua/serialize.lua src/lua/status.lua src/lua/sub.lua src/lua/utils.lua
+	@printf "\033[1;33mbuilding $@\033[0m\n"
+	@scripts/pack_lua.sh
+
+debug: build/lua_bytecode.h
 	@lua make.lua > gen.mk
 	@$(MAKE) -f gen.mk
 
-asan:
+asan: build/lua_bytecode.h
 	@lua make.lua asan > gen.mk
 	@$(MAKE) -f gen.mk
 
-release:
+release: build/lua_bytecode.h
 	@lua make.lua release > gen.mk
 	@$(MAKE) -f gen.mk
 

@@ -11,6 +11,7 @@ void textbox_init( TextBox * tb ) {
 	*tb = { };
 	// TODO: this is kinda crap
 	tb->text.lines = ( Line * ) calloc( sizeof( Line ), SCROLLBACK_SIZE );
+	tb->text.num_lines = 1;
 }
 
 void textbox_term( TextBox * tb ) {
@@ -116,7 +117,7 @@ void TextBox::scroll( int offset ) {
 		scroll_offset -= min( size_t( -offset ), scroll_offset );
 	}
 	else {
-		scroll_offset = min( scroll_offset + offset, text.num_lines );
+		scroll_offset = min( scroll_offset + offset, text.num_lines - 1 );
 	}
 
 	textbox_draw( this );
@@ -124,7 +125,7 @@ void TextBox::scroll( int offset ) {
 
 void TextBox::page_down() {
 	size_t rows = height / ( Style.font.height + SPACING );
-	scroll( -int( rows ) - 2 );
+	scroll( -int( rows ) + 2 );
 }
 
 void TextBox::page_up() {

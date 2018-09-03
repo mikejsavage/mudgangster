@@ -65,27 +65,30 @@ void textbox_draw( const TextBox * tb ) {
 	XSetForeground( UI.display, UI.gc, Style.bg );
 	XFillRectangle( UI.display, doublebuf, UI.gc, 0, 0, tb->width, tb->height );
 
+	/*
+	 * lines refers to lines of text sent from the game
+	 * rows refers to visual rows of text in the client, so when lines get
+	 * wrapped they have more than one row
+	 */
+	size_t lines_drawn = 0;
 	size_t rows_drawn = 0;
 	size_t tb_rows = tb->height / ( Style.font.height + SPACING );
 	size_t tb_cols = tb->width / Style.font.width;
 
-	for( size_t l = 0; l < tb->text.num_lines; l++ ) {
-		const Line & line = tb->text.lines[ ( tb->text.head + tb->text.num_lines - tb->scroll_offset - l ) % SCROLLBACK_SIZE ];
+	while( rows_drawn < tb_rows && lines_drawn < tb->text.num_lines ) {
+		const Line & line = tb->text.lines[ ( tb->text.head + tb->text.num_lines - tb->scroll_offset - lines_drawn ) % SCROLLBACK_SIZE ];
 
-		size_t rows = 1 + line.len / tb_cols;
+		size_t line_rows = 1 + line.len / tb_cols;
 		if( line.len > 0 && line.len % tb_cols == 0 )
-			rows--;
+			line_rows--;
 
 		for( size_t i = 0; i < line.len; i++ ) {
 			const Glyph & glyph = line.glyphs[ i ];
 
 			size_t row = i / tb_cols;
-			if( i > 0 && i % tb_cols == 0 )
-				row--;
 
 			int left = ( i % tb_cols ) * Style.font.width;
-			// TODO: wrapping doesn't update top correctly
-			int top = tb->height - ( 1 + rows_drawn + row ) * ( Style.font.height + SPACING );
+			int top = tb->height - ( rows_drawn + line_rows - row ) * ( Style.font.height + SPACING );
 			if( top < 0 )
 				continue;
 
@@ -103,9 +106,8 @@ void textbox_draw( const TextBox * tb ) {
 			XDrawString( UI.display, doublebuf, UI.gc, left, top + Style.font.ascent + SPACING, &glyph.ch, 1 );
 		}
 
-		rows_drawn += rows;
-		if( rows_drawn >= tb_rows )
-			break;
+		lines_drawn++;
+		rows_drawn += line_rows;
 	}
 
 	XCopyArea( UI.display, doublebuf, UI.window, UI.gc, 0, 0, tb->width, tb->height, tb->x, tb->y );

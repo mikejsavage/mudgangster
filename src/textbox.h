@@ -18,7 +18,7 @@ enum Colour {
 };
 
 constexpr size_t MAX_LINE_LENGTH = 2048;
-constexpr size_t SCROLLBACK_SIZE = 1 << 16; // TODO
+constexpr size_t SCROLLBACK_SIZE = 1 << 16;
 
 struct Glyph {
 	char ch;

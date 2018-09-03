@@ -154,5 +154,5 @@ void textbox_page_down( TextBox * tb ) {
 
 void textbox_page_up( TextBox * tb ) {
 	size_t rows = tb->height / ( Style.font.height + SPACING );
-	textbox_scroll( tb, rows - 1 ); // TODO
+	textbox_scroll( tb, rows - 1 );
 }

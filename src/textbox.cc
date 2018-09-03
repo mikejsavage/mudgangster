@@ -7,6 +7,28 @@
 #include "common.h"
 #include <stdio.h>
 
+static uint8_t pack_style( Colour fg, Colour bg, bool bold ) {
+	STATIC_ASSERT( NUM_COLOURS * NUM_COLOURS * 2 < UINT8_MAX );
+
+	uint32_t style = 0;
+
+	style = checked_cast< uint32_t >( fg );
+	style = style * NUM_COLOURS + checked_cast< uint32_t >( bg );
+	style = style * 2 + checked_cast< uint32_t >( bold );
+
+	return checked_cast< uint8_t >( style );
+}
+
+static void unpack_style( uint8_t style, int * fg, int * bg, int * bold ) {
+	*bold = style % 2;
+	style /= 2;
+
+	*bg = style % NUM_COLOURS;
+	style /= NUM_COLOURS;
+
+	*fg = style;
+}
+
 void textbox_init( TextBox * tb, size_t scrollback ) {
 	*tb = { };
 	// TODO: this is kinda crap
@@ -37,8 +59,7 @@ void textbox_add( TextBox * tb, const char * str, unsigned int len, Colour fg, C
 	for( size_t i = 0; i < n; i++ ) {
 		Glyph & glyph = line->glyphs[ line->len + i ];
 		glyph.ch = str[ i ];
-		glyph.fgbg = checked_cast< uint8_t >( fg ) | ( checked_cast< uint8_t >( bg ) << 4 );
-		glyph.bold = checked_cast< uint8_t >( bold );
+		glyph.style = pack_style( fg, bg, bold );
 	};
 
 	line->len += n;
@@ -92,17 +113,18 @@ void textbox_draw( const TextBox * tb ) {
 			if( top < 0 )
 				continue;
 
+			int fg, bg, bold;
+			unpack_style( glyph.style, &fg, &bg, &bold );
+
 			// bg
-			int bg = glyph.fgbg >> 4;
 			int top_spacing = SPACING / 2;
 			int bot_spacing = SPACING - top_spacing;
 			XSetForeground( UI.display, UI.gc, bg == SYSTEM ? Style.Colours.system : Style.colours[ 0 ][ bg ] );
 			XFillRectangle( UI.display, doublebuf, UI.gc, left, top - top_spacing, Style.font.width, Style.font.height + bot_spacing );
 
 			// fg
-			int fg = glyph.fgbg & 0xF;
-			XSetFont( UI.display, UI.gc, ( glyph.bold ? Style.fontBold : Style.font ).font->fid );
-			XSetForeground( UI.display, UI.gc, fg == SYSTEM ? Style.Colours.system : Style.colours[ glyph.bold ][ fg ] );
+			XSetFont( UI.display, UI.gc, ( bold ? Style.fontBold : Style.font ).font->fid );
+			XSetForeground( UI.display, UI.gc, fg == SYSTEM ? Style.Colours.system : Style.colours[ bold ][ fg ] );
 			XDrawString( UI.display, doublebuf, UI.gc, left, top + Style.font.ascent + SPACING, &glyph.ch, 1 );
 		}
 

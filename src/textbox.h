@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+// TODO: probably don't need most of these
 enum Colour {
 	BLACK,
 	RED,
@@ -12,17 +13,16 @@ enum Colour {
 	CYAN,
 	WHITE,
 	SYSTEM,
-	NONE,
+
+	NUM_COLOURS,
 };
 
 constexpr size_t MAX_LINE_LENGTH = 2048;
 constexpr size_t SCROLLBACK_SIZE = 1 << 16; // TODO
 
-// TODO: pack these better
 struct Glyph {
 	char ch;
-	uint8_t fgbg;
-	uint8_t bold;
+	uint8_t style;
 };
 
 struct Line {

@@ -90,6 +90,8 @@ extern StyleDefs Style;
 
 #define STRL( x ) ( x ), sizeof( x ) - 1
 
+#define STATIC_ASSERT( p ) static_assert( p, #p )
+
 template< typename T >
 constexpr T min( T a, T b ) {
 	return a < b ? a : b;

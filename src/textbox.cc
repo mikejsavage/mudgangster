@@ -77,9 +77,8 @@ void textbox_newline( TextBox * tb ) {
 }
 
 void textbox_draw( const TextBox * tb ) {
-	if( tb->width == 0 || tb->height == 0 ) {
+	if( tb->width == 0 || tb->height == 0 )
 		return;
-	}
 
 	Pixmap doublebuf = XCreatePixmap( UI.display, UI.window, tb->width, tb->height, UI.depth );
 

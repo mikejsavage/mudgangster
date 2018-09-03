@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 enum Colour {
 	BLACK,
 	RED,
@@ -19,8 +21,8 @@ constexpr size_t SCROLLBACK_SIZE = 1 << 16; // TODO
 // TODO: pack these better
 struct Glyph {
 	char ch;
-	Colour fg, bg;
-	bool bold;
+	uint8_t fgbg;
+	uint8_t bold;
 };
 
 struct Line {

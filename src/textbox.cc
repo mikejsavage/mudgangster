@@ -37,9 +37,8 @@ void textbox_add( TextBox * tb, const char * str, unsigned int len, Colour fg, C
 	for( size_t i = 0; i < n; i++ ) {
 		Glyph & glyph = line->glyphs[ line->len + i ];
 		glyph.ch = str[ i ];
-		glyph.fg = fg;
-		glyph.bg = bg;
-		glyph.bold = bold;
+		glyph.fgbg = checked_cast< uint8_t >( fg ) | ( checked_cast< uint8_t >( bg ) << 4 );
+		glyph.bold = checked_cast< uint8_t >( bold );
 	};
 
 	line->len += n;
@@ -94,16 +93,16 @@ void textbox_draw( const TextBox * tb ) {
 				continue;
 
 			// bg
+			int bg = glyph.fgbg >> 4;
 			int top_spacing = SPACING / 2;
 			int bot_spacing = SPACING - top_spacing;
-			XSetForeground( UI.display, UI.gc,
-				glyph.bg == SYSTEM ? Style.Colours.system : Style.colours[ 0 ][ glyph.bg ] );
+			XSetForeground( UI.display, UI.gc, bg == SYSTEM ? Style.Colours.system : Style.colours[ 0 ][ bg ] );
 			XFillRectangle( UI.display, doublebuf, UI.gc, left, top - top_spacing, Style.font.width, Style.font.height + bot_spacing );
 
 			// fg
+			int fg = glyph.fgbg & 0xF;
 			XSetFont( UI.display, UI.gc, ( glyph.bold ? Style.fontBold : Style.font ).font->fid );
-			XSetForeground( UI.display, UI.gc,
-				glyph.fg == SYSTEM ? Style.Colours.system : Style.colours[ glyph.bold ][ glyph.fg ] );
+			XSetForeground( UI.display, UI.gc, fg == SYSTEM ? Style.Colours.system : Style.colours[ glyph.bold ][ fg ] );
 			XDrawString( UI.display, doublebuf, UI.gc, left, top + Style.font.ascent + SPACING, &glyph.ch, 1 );
 		}
 

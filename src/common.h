@@ -1,5 +1,8 @@
 #pragma once
 
+#include <stdint.h>
+#include <assert.h>
+
 #include <X11/Xlib.h>
 
 #include "config.h"
@@ -95,4 +98,11 @@ constexpr T min( T a, T b ) {
 template< typename T >
 constexpr T max( T a, T b ) {
 	return a > b ? a : b;
+}
+
+template< typename To, typename From >
+inline To checked_cast( const From & from ) {
+	To result = To( from );
+	assert( From( result ) == from );
+	return result;
 }

@@ -46,10 +46,6 @@ struct TextBox {
 	int height;
 
 	size_t scroll_offset;
-
-	void scroll( int offset );
-	void page_up();
-	void page_down();
 };
 
 void textbox_init( TextBox * tb, size_t scrollback );
@@ -60,3 +56,7 @@ void textbox_setsize( TextBox * tb, int width, int height );
 void textbox_add( TextBox * tb, const char * str, unsigned int len, Colour fg, Colour bg, bool bold );
 void textbox_newline( TextBox * tb );
 void textbox_draw( const TextBox * tb );
+
+void textbox_scroll( TextBox * tb, int offset );
+void textbox_page_up( TextBox * tb );
+void textbox_page_down( TextBox * tb );

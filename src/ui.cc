@@ -147,16 +147,16 @@ void eventKeyPress( XEvent* event ) {
 
 		case XK_Page_Up:
 			if( shift )
-				UI.textMain.scroll( 1 );
+				textbox_scroll( &UI.textMain, 1 );
 			else
-				UI.textMain.page_up();
+				textbox_page_up( &UI.textMain );
 			break;
 
 		case XK_Page_Down:
 			if( shift )
-				UI.textMain.scroll( -1 );
+				textbox_scroll( &UI.textMain, -1 );
 			else
-				UI.textMain.page_down();
+				textbox_page_down( &UI.textMain );
 			break;
 
 		case XK_Up:

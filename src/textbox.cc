@@ -136,23 +136,23 @@ void textbox_draw( const TextBox * tb ) {
 	XFreePixmap( UI.display, doublebuf );
 }
 
-void TextBox::scroll( int offset ) {
+void textbox_scroll( TextBox * tb, int offset ) {
 	if( offset < 0 ) {
-		scroll_offset -= min( size_t( -offset ), scroll_offset );
+		tb->scroll_offset -= min( size_t( -offset ), tb->scroll_offset );
 	}
 	else {
-		scroll_offset = min( scroll_offset + offset, text.num_lines - 1 );
+		tb->scroll_offset = min( tb->scroll_offset + offset, tb->text.num_lines - 1 );
 	}
 
-	textbox_draw( this );
+	textbox_draw( tb );
 }
 
-void TextBox::page_down() {
-	size_t rows = height / ( Style.font.height + SPACING );
-	scroll( -int( rows ) + 2 );
+void textbox_page_down( TextBox * tb ) {
+	size_t rows = tb->height / ( Style.font.height + SPACING );
+	textbox_scroll( tb, -int( rows ) + 1 );
 }
 
-void TextBox::page_up() {
-	size_t rows = height / ( Style.font.height + SPACING );
-	scroll( rows - 2 ); // TODO
+void textbox_page_up( TextBox * tb ) {
+	size_t rows = tb->height / ( Style.font.height + SPACING );
+	textbox_scroll( tb, rows - 1 ); // TODO
 }

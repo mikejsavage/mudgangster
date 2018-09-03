@@ -1,13 +1,8 @@
-#include <stdlib.h>
-#include <assert.h>
+#include "common.h"
+#include "platform.h"
+#include "ui.h"
 
 #include <lua.hpp>
-
-#include <X11/Xutil.h>
-
-#include "common.h"
-#include "ui.h"
-#include "platform.h"
 
 #if LUA_VERSION_NUM < 502
 #define luaL_len lua_objlen
@@ -59,7 +54,8 @@ extern "C" int mud_handleXEvents( lua_State * ) {
 	return 0;
 }
 
-static void generic_print( TextBox * tb, lua_State * L ) {
+template< typename F >
+static void generic_print( F * f, lua_State * L ) {
 	const char * str = luaL_checkstring( L, 1 );
 	size_t len = luaL_len( L, 1 );
 
@@ -67,36 +63,36 @@ static void generic_print( TextBox * tb, lua_State * L ) {
 	Colour bg = Colour( luaL_checkinteger( L, 3 ) );
 	bool bold = lua_toboolean( L, 4 );
 
-	textbox_add( tb, str, len, fg, bg, bold );
+	f( str, len, fg, bg, bold );
 }
 
 extern "C" int mud_printMain( lua_State * L ) {
-	generic_print( &UI.textMain, L );
+	generic_print( ui_main_print, L );
 	return 0;
 }
 
 extern "C" int mud_newlineMain( lua_State * L ) {
-	textbox_newline( &UI.textMain );
+	ui_main_newline();
 	return 0;
 }
 
 extern "C" int mud_drawMain( lua_State * L ) {
-	textbox_draw( &UI.textMain );
+	ui_main_draw();
 	return 0;
 }
 
 extern "C" int mud_printChat( lua_State * L ) {
-	generic_print( &UI.textChat, L );
+	generic_print( ui_chat_print, L );
 	return 0;
 }
 
 extern "C" int mud_newlineChat( lua_State * L ) {
-	textbox_newline( &UI.textChat );
+	ui_chat_newline();
 	return 0;
 }
 
 extern "C" int mud_drawChat( lua_State * L ) {
-	textbox_draw( &UI.textChat );
+	ui_chat_draw();
 	return 0;
 }
 
@@ -105,7 +101,7 @@ extern "C" int mud_setStatus( lua_State * L ) {
 
 	size_t len = luaL_len( L, 1 );
 
-	ui_statusClear();
+	ui_clear_status();
 
 	for( size_t i = 0; i < len; i++ ) {
 		lua_pushnumber( L, i + 1 );
@@ -131,7 +127,7 @@ extern "C" int mud_setStatus( lua_State * L ) {
 		lua_pop( L, 4 );
 	}
 
-	ui_statusDraw();
+	ui_draw_status();
 
 	return 0;
 }
@@ -149,13 +145,7 @@ extern "C" int mud_setHandlers( lua_State * L ) {
 }
 
 extern "C" int mud_urgent( lua_State * L ) {
-	if( !UI.hasFocus ) {
-		XWMHints * hints = XGetWMHints( UI.display, UI.window );
-		hints->flags |= XUrgencyHint;
-		XSetWMHints( UI.display, UI.window, hints );
-		XFree( hints );
-	}
-
+	ui_urgent();
 	return 0;
 }
 
@@ -182,11 +172,10 @@ void script_init() {
 
 	if( luaL_loadbufferx( lua, ( const char * ) lua_bytecode, sizeof( lua_bytecode ), "main", "b" ) != LUA_OK ) {
 		printf( "Error reading main.lua: %s\n", lua_tostring( lua, -1 ) );
-
 		exit( 1 );
 	}
 
-	lua_pushinteger( lua, ConnectionNumber( UI.display ) );
+	lua_pushinteger( lua, ui_display_fd() );
 	lua_pushcfunction( lua, mud_handleXEvents );
 
 	lua_pushcfunction( lua, mud_printMain );
@@ -205,11 +194,10 @@ void script_init() {
 
 	if( lua_pcall( lua, 11, 0, -13 ) ) {
 		printf( "Error running main.lua: %s\n", lua_tostring( lua, -1 ) );
-
 		exit( 1 );
 	}
 }
 
-void script_end() {
+void script_term() {
 	lua_close( lua );
 }

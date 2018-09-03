@@ -1,8 +1,18 @@
-#ifndef _INPUT_H_
-#define _INPUT_H_
+#pragma once
 
-void input_send();
+#include <stddef.h>
 
+struct InputBuffer {
+	char * buf;
+
+	size_t len;
+	size_t cursor_pos;
+};
+
+void input_init();
+void input_term();
+
+void input_return();
 void input_backspace();
 void input_delete();
 
@@ -13,9 +23,4 @@ void input_right();
 
 void input_add( const char * buffer, int len );
 
-void input_draw();
-
-void input_init();
-void input_end();
-
-#endif // _INPUT_H_
+InputBuffer input_get_buffer();

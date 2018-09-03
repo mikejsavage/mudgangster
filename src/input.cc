@@ -23,7 +23,27 @@ static int inputBufferSize = 256;
 static int inputLen = 0;
 static int inputPos = 0;
 
-void input_send() {
+void input_init() {
+	inputBuffer = ( char * ) malloc( inputBufferSize );
+	starsBuffer = ( char * ) malloc( inputBufferSize );
+
+	memset( starsBuffer, '*', inputBufferSize );
+}
+
+void input_term() {
+	free( inputBuffer );
+	free( starsBuffer );
+}
+
+InputBuffer input_get_buffer() {
+	InputBuffer buf;
+	buf.buf = inputBuffer;
+	buf.len = inputLen;
+	buf.cursor_pos = inputPos;
+	return buf;
+}
+
+void input_return() {
 	if( inputLen > 0 ) {
 		InputHistory * lastCmd = &inputHistory[ ( inputHistoryHead + inputHistoryCount - 1 ) % MAX_INPUT_HISTORY ];
 
@@ -52,8 +72,6 @@ void input_send() {
 
 	inputLen = 0;
 	inputPos = 0;
-
-	input_draw();
 }
 
 void input_backspace() {
@@ -63,8 +81,6 @@ void input_backspace() {
 		inputLen--;
 		inputPos--;
 	}
-
-	input_draw();
 }
 
 void input_delete() {
@@ -73,8 +89,6 @@ void input_delete() {
 
 		inputLen--;
 	}
-
-	input_draw();
 }
 
 void input_up() {
@@ -90,8 +104,6 @@ void input_up() {
 
 	inputLen = cmd.len;
 	inputPos = cmd.len;
-
-	input_draw();
 }
 
 void input_down() {
@@ -114,20 +126,14 @@ void input_down() {
 		inputLen = 0;
 		inputPos = 0;
 	}
-
-	input_draw();
 }
 
 void input_left() {
 	inputPos = max( inputPos - 1, 0 );
-
-	input_draw();
 }
 
 void input_right() {
 	inputPos = min( inputPos + 1, inputLen );
-
-	input_draw();
 }
 
 void input_add( const char * buffer, int len ) {
@@ -148,36 +154,4 @@ void input_add( const char * buffer, int len ) {
 
 	inputLen += len;
 	inputPos += len;
-
-	input_draw();
-}
-
-void input_draw() {
-	XSetFont( UI.display, UI.gc, Style.font.font->fid );
-
-	XSetForeground( UI.display, UI.gc, Style.bg );
-	XFillRectangle( UI.display, UI.window, UI.gc, PADDING, UI.height - ( PADDING + Style.font.height ), UI.width - 6, Style.font.height );
-
-	XSetForeground( UI.display, UI.gc, Style.fg );
-	XDrawString( UI.display, UI.window, UI.gc, PADDING, UI.height - ( PADDING + Style.font.descent ), inputBuffer, inputLen );
-
-	XSetForeground( UI.display, UI.gc, Style.cursor );
-	XFillRectangle( UI.display, UI.window, UI.gc, PADDING + Style.font.width * inputPos, UI.height - ( PADDING + Style.font.height ), Style.font.width, Style.font.height );
-
-	if( inputPos < inputLen ) {
-		XSetForeground( UI.display, UI.gc, Style.bg );
-		XDrawString( UI.display, UI.window, UI.gc, PADDING + Style.font.width * inputPos, UI.height - ( PADDING + Style.font.descent ), inputBuffer + inputPos, 1 );
-	}
-}
-
-void input_init() {
-	inputBuffer = ( char * ) malloc( inputBufferSize );
-	starsBuffer = ( char * ) malloc( inputBufferSize );
-
-	memset( starsBuffer, '*', inputBufferSize );
-}
-
-void input_end() {
-	free( inputBuffer );
-	free( starsBuffer );
 }

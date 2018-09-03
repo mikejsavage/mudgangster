@@ -10,9 +10,181 @@
 #include "common.h"
 #include "input.h"
 #include "script.h"
+#include "textbox.h"
 
-UIDefs UI;
-StyleDefs Style;
+struct TextBufferView {
+	TextBuffer text;
+
+	int x;
+	int y;
+	int width;
+	int height;
+
+	size_t scroll_offset;
+};
+
+struct {
+	Display * display;
+	int screen;
+
+	GC gc;
+	Colormap colorMap;
+
+	Window window;
+
+	TextBufferView main_text_view;
+	TextBufferView chat_text_view;
+
+	int width;
+	int height;
+	int depth;
+
+	bool has_focus;
+} UI;
+
+struct MudFont {
+	int ascent;
+	int descent;
+
+	int height;
+	int width;
+
+	XFontStruct * font;
+};
+
+struct {
+	ulong bg;
+	ulong fg;
+
+	XColor xBG;
+	XColor xFG;
+
+	ulong statusBG;
+	ulong statusFG;
+
+	ulong inputBG;
+	ulong inputFG;
+	ulong cursor;
+
+	MudFont font;
+	MudFont fontBold;
+
+	union {
+		struct {
+			ulong black;
+			ulong red;
+			ulong green;
+			ulong yellow;
+			ulong blue;
+			ulong magenta;
+			ulong cyan;
+			ulong white;
+
+			ulong lblack;
+			ulong lred;
+			ulong lgreen;
+			ulong lyellow;
+			ulong lblue;
+			ulong lmagenta;
+			ulong lcyan;
+			ulong lwhite;
+
+			ulong system;
+		} Colours;
+
+		ulong colours[ 2 ][ 8 ];
+	};
+} Style;
+
+static void textview_draw( const TextBufferView * tv ) {
+	if( tv->width == 0 || tv->height == 0 )
+		return;
+
+	Pixmap doublebuf = XCreatePixmap( UI.display, UI.window, tv->width, tv->height, UI.depth );
+
+	XSetForeground( UI.display, UI.gc, Style.bg );
+	XFillRectangle( UI.display, doublebuf, UI.gc, 0, 0, tv->width, tv->height );
+
+	/*
+	 * lines refers to lines of text sent from the game
+	 * rows refers to visual rows of text in the client, so when lines get
+	 * wrapped they have more than one row
+	 */
+	size_t lines_drawn = 0;
+	size_t rows_drawn = 0;
+	size_t tv_rows = tv->height / ( Style.font.height + SPACING );
+	size_t tv_cols = tv->width / Style.font.width;
+
+	while( rows_drawn < tv_rows && lines_drawn < tv->text.num_lines ) {
+		const TextBuffer::Line & line = tv->text.lines[ ( tv->text.head + tv->text.num_lines - tv->scroll_offset - lines_drawn ) % tv->text.max_lines ];
+
+		size_t line_rows = 1 + line.len / tv_cols;
+		if( line.len > 0 && line.len % tv_cols == 0 )
+			line_rows--;
+
+		for( size_t i = 0; i < line.len; i++ ) {
+			const TextBuffer::Glyph & glyph = line.glyphs[ i ];
+
+			size_t row = i / tv_cols;
+
+			int left = ( i % tv_cols ) * Style.font.width;
+			int top = tv->height - ( rows_drawn + line_rows - row ) * ( Style.font.height + SPACING );
+			if( top < 0 )
+				continue;
+
+			int fg, bg, bold;
+			unpack_style( glyph.style, &fg, &bg, &bold );
+
+			// bg
+			int top_spacing = SPACING / 2;
+			int bot_spacing = SPACING - top_spacing;
+			XSetForeground( UI.display, UI.gc, bg == SYSTEM ? Style.Colours.system : Style.colours[ 0 ][ bg ] );
+			XFillRectangle( UI.display, doublebuf, UI.gc, left, top - top_spacing, Style.font.width, Style.font.height + bot_spacing );
+
+			// fg
+			XSetFont( UI.display, UI.gc, ( bold ? Style.fontBold : Style.font ).font->fid );
+			XSetForeground( UI.display, UI.gc, fg == SYSTEM ? Style.Colours.system : Style.colours[ bold ][ fg ] );
+			XDrawString( UI.display, doublebuf, UI.gc, left, top + Style.font.ascent + SPACING, &glyph.ch, 1 );
+		}
+
+		lines_drawn++;
+		rows_drawn += line_rows;
+	}
+
+	XCopyArea( UI.display, doublebuf, UI.window, UI.gc, 0, 0, tv->width, tv->height, tv->x, tv->y );
+	XFreePixmap( UI.display, doublebuf );
+}
+
+static void textview_scroll( TextBufferView * tv, int offset ) {
+	if( offset < 0 ) {
+		tv->scroll_offset -= min( size_t( -offset ), tv->scroll_offset );
+	}
+	else {
+		tv->scroll_offset = min( tv->scroll_offset + offset, tv->text.num_lines - 1 );
+	}
+
+	textview_draw( tv );
+}
+
+static void textview_page_down( TextBufferView * tv ) {
+	size_t rows = tv->height / ( Style.font.height + SPACING );
+	textview_scroll( tv, -int( rows ) + 1 );
+}
+
+static void textview_page_up( TextBufferView * tv ) {
+	size_t rows = tv->height / ( Style.font.height + SPACING );
+	textview_scroll( tv, rows - 1 );
+}
+
+static void textview_set_pos( TextBufferView * tv, int x, int y ) {
+	tv->x = x;
+	tv->y = y;
+}
+
+static void textview_set_size( TextBufferView * tv, int w, int h ) {
+	tv->width = w;
+	tv->height = h;
+}
 
 static Atom wmDeleteWindow;
 
@@ -27,23 +199,7 @@ static StatusChar * statusContents = NULL;
 static size_t statusCapacity = 256;
 static size_t statusLen = 0;
 
-void ui_statusDraw() {
-	XSetForeground( UI.display, UI.gc, Style.statusBG );
-	XFillRectangle( UI.display, UI.window, UI.gc, 0, UI.height - ( PADDING * 4 ) - ( Style.font.height * 2 ), UI.width, Style.font.height + ( PADDING * 2 ) );
-
-	for( size_t i = 0; i < statusLen; i++ ) {
-		StatusChar sc = statusContents[ i ];
-
-		XSetFont( UI.display, UI.gc, ( sc.bold ? Style.fontBold : Style.font ).font->fid );
-		XSetForeground( UI.display, UI.gc, Style.colours[ sc.bold ][ sc.fg ] );
-
-		int x = PADDING + i * Style.font.width;
-		int y = UI.height - ( PADDING * 3 ) - Style.font.height - Style.font.descent;
-		XDrawString( UI.display, UI.window, UI.gc, x, y, &sc.c, 1 );
-	}
-}
-
-void ui_statusClear() {
+void ui_clear_status() {
 	statusLen = 0;
 }
 
@@ -63,14 +219,50 @@ void ui_statusAdd( const char c, const Colour fg, const bool bold ) {
 	statusLen++;
 }
 
+void ui_draw_status() {
+	XSetForeground( UI.display, UI.gc, Style.statusBG );
+	XFillRectangle( UI.display, UI.window, UI.gc, 0, UI.height - ( PADDING * 4 ) - ( Style.font.height * 2 ), UI.width, Style.font.height + ( PADDING * 2 ) );
+
+	for( size_t i = 0; i < statusLen; i++ ) {
+		StatusChar sc = statusContents[ i ];
+
+		XSetFont( UI.display, UI.gc, ( sc.bold ? Style.fontBold : Style.font ).font->fid );
+		XSetForeground( UI.display, UI.gc, Style.colours[ sc.bold ][ sc.fg ] );
+
+		int x = PADDING + i * Style.font.width;
+		int y = UI.height - ( PADDING * 3 ) - Style.font.height - Style.font.descent;
+		XDrawString( UI.display, UI.window, UI.gc, x, y, &sc.c, 1 );
+	}
+}
+
+void draw_input() {
+	InputBuffer input = input_get_buffer();
+
+	XSetFont( UI.display, UI.gc, Style.font.font->fid );
+
+	XSetForeground( UI.display, UI.gc, Style.bg );
+	XFillRectangle( UI.display, UI.window, UI.gc, PADDING, UI.height - ( PADDING + Style.font.height ), UI.width - 6, Style.font.height );
+
+	XSetForeground( UI.display, UI.gc, Style.fg );
+	XDrawString( UI.display, UI.window, UI.gc, PADDING, UI.height - ( PADDING + Style.font.descent ), input.buf, input.len );
+
+	XSetForeground( UI.display, UI.gc, Style.cursor );
+	XFillRectangle( UI.display, UI.window, UI.gc, PADDING + Style.font.width * input.cursor_pos, UI.height - ( PADDING + Style.font.height ), Style.font.width, Style.font.height );
+
+	if( input.cursor_pos < input.len ) {
+		XSetForeground( UI.display, UI.gc, Style.bg );
+		XDrawString( UI.display, UI.window, UI.gc, PADDING + Style.font.width * input.cursor_pos, UI.height - ( PADDING + Style.font.descent ), input.buf + input.cursor_pos, 1 );
+	}
+}
+
 void ui_draw() {
 	XClearWindow( UI.display, UI.window );
 
-	input_draw();
-	ui_statusDraw();
+	draw_input();
+	ui_draw_status();
 
-	textbox_draw( &UI.textChat );
-	textbox_draw( &UI.textMain );
+	textview_draw( &UI.chat_text_view );
+	textview_draw( &UI.main_text_view );
 
 	int spacerY = ( 2 * PADDING ) + ( Style.font.height + SPACING ) * CHAT_ROWS;
 	XSetForeground( UI.display, UI.gc, Style.statusBG );
@@ -100,11 +292,11 @@ static void eventResize( XEvent * event ) {
 	XSetForeground( UI.display, UI.gc, Style.bg );
 	XFillRectangle( UI.display, UI.window, UI.gc, 0, 0, UI.width, UI.height );
 
-	textbox_setpos( &UI.textChat, PADDING, PADDING );
-	textbox_setsize( &UI.textChat, UI.width - ( 2 * PADDING ), ( Style.font.height + SPACING ) * CHAT_ROWS );
+	textview_set_pos( &UI.chat_text_view, PADDING, PADDING );
+	textview_set_size( &UI.chat_text_view, UI.width - ( 2 * PADDING ), ( Style.font.height + SPACING ) * CHAT_ROWS );
 
-	textbox_setpos( &UI.textMain, PADDING, ( PADDING * 2 ) + CHAT_ROWS * ( Style.font.height + SPACING ) + 1 );
-	textbox_setsize( &UI.textMain, UI.width - ( 2 * PADDING ), UI.height
+	textview_set_pos( &UI.main_text_view, PADDING, ( PADDING * 2 ) + CHAT_ROWS * ( Style.font.height + SPACING ) + 1 );
+	textview_set_size( &UI.main_text_view, UI.width - ( 2 * PADDING ), UI.height
 		- ( ( ( Style.font.height + SPACING ) * CHAT_ROWS ) + ( PADDING * 2 ) )
 		- ( ( Style.font.height * 2 ) + ( PADDING * 5 ) ) - 1
 	);
@@ -133,45 +325,52 @@ static void eventKeyPress( XEvent * event ) {
 
 	switch( key ) {
 		case XK_Return:
-			input_send();
+			input_return();
+			draw_input();
 			break;
 
 		case XK_BackSpace:
 			input_backspace();
+			draw_input();
 			break;
 
 		case XK_Delete:
 			input_delete();
+			draw_input();
 			break;
 
 		case XK_Page_Up:
 			if( shift )
-				textbox_scroll( &UI.textMain, 1 );
+				textview_scroll( &UI.main_text_view, 1 );
 			else
-				textbox_page_up( &UI.textMain );
+				textview_page_up( &UI.main_text_view );
 			break;
 
 		case XK_Page_Down:
 			if( shift )
-				textbox_scroll( &UI.textMain, -1 );
+				textview_scroll( &UI.main_text_view, -1 );
 			else
-				textbox_page_down( &UI.textMain );
+				textview_page_down( &UI.main_text_view );
 			break;
 
 		case XK_Up:
 			input_up();
+			draw_input();
 			break;
 
 		case XK_Down:
 			input_down();
+			draw_input();
 			break;
 
 		case XK_Left:
 			input_left();
+			draw_input();
 			break;
 
 		case XK_Right:
 			input_right();
+			draw_input();
 			break;
 
 		ADD_MACRO( XK_KP_1, "kp1" );
@@ -226,10 +425,13 @@ static void eventKeyPress( XEvent * event ) {
 		ADD_MACRO( XK_F12, "f12" );
 
 		default:
-			if( ctrl || alt )
+			if( ctrl || alt ) {
 				script_doMacro( keyBuffer, len, shift, ctrl, alt );
-			else
+			}
+			else {
 				input_add( keyBuffer, len );
+				draw_input();
+			}
 
 			break;
 	}
@@ -238,11 +440,11 @@ static void eventKeyPress( XEvent * event ) {
 }
 
 static void eventFocusOut( XEvent * event ) {
-	UI.hasFocus = 0;
+	UI.has_focus = false;
 }
 
 static void eventFocusIn( XEvent * event ) {
-	UI.hasFocus = 1;
+	UI.has_focus = true;
 
 	XWMHints * hints = XGetWMHints( UI.display, UI.window );
 	hints->flags &= ~XUrgencyHint;
@@ -283,10 +485,8 @@ static MudFont loadFont( const char * fontStr ) {
 
 	font.ascent = font.font->ascent;
 	font.descent = font.font->descent;
-	font.lbearing = font.font->min_bounds.lbearing;
-	font.rbearing = font.font->max_bounds.rbearing;
 
-	font.width = font.rbearing - font.lbearing;
+	font.width = font.font->max_bounds.rbearing - font.font->min_bounds.lbearing;
 	font.height = font.ascent + font.descent;
 
 	return font;
@@ -343,8 +543,10 @@ static void initStyle() {
 }
 
 void ui_init() {
-	textbox_init( &UI.textMain, SCROLLBACK_SIZE );
-	textbox_init( &UI.textChat, CHAT_ROWS );
+	UI = { };
+
+	text_init( &UI.main_text_view.text, SCROLLBACK_SIZE );
+	text_init( &UI.chat_text_view.text, CHAT_ROWS );
 	UI.display = XOpenDisplay( NULL );
 	UI.screen = XDefaultScreen( UI.display );
 	UI.width = -1;
@@ -386,9 +588,46 @@ void ui_init() {
 	XSetWMProtocols( UI.display, UI.window, &wmDeleteWindow, 1 );
 }
 
-void ui_end() {
-	textbox_term( &UI.textMain );
-	textbox_term( &UI.textChat );
+void ui_main_draw() {
+	textview_draw( &UI.main_text_view );
+}
+
+void ui_main_newline() {
+	text_newline( &UI.main_text_view.text );
+}
+
+void ui_main_print( const char * str, size_t len, Colour fg, Colour bg, bool bold ) {
+	text_add( &UI.main_text_view.text, str, len, fg, bg, bold );
+}
+
+void ui_chat_draw() {
+	textview_draw( &UI.chat_text_view );
+}
+
+void ui_chat_newline() {
+	text_newline( &UI.chat_text_view.text );
+}
+
+void ui_chat_print( const char * str, size_t len, Colour fg, Colour bg, bool bold ) {
+	text_add( &UI.chat_text_view.text, str, len, fg, bg, bold );
+}
+
+void ui_urgent() {
+	if( !UI.has_focus ) {
+                XWMHints * hints = XGetWMHints( UI.display, UI.window );
+                hints->flags |= XUrgencyHint;
+                XSetWMHints( UI.display, UI.window, hints );
+                XFree( hints );
+        }
+}
+
+int ui_display_fd() {
+	return ConnectionNumber( UI.display );
+}
+
+void ui_term() {
+	text_destroy( &UI.main_text_view.text );
+	text_destroy( &UI.chat_text_view.text );
 	free( statusContents );
 
 	XFreeFont( UI.display, Style.font.font );

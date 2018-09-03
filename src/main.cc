@@ -9,9 +9,9 @@ int main() {
 
 	// main loop is done in lua
 
-	script_end();
-	input_end();
-	ui_end();
+	script_term();
+	input_term();
+	ui_term();
 
 	return 0;
 }

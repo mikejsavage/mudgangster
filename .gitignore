@@ -1,3 +1,4 @@
 mudGangster
-.tags
-*.o
+build
+release
+gen.mk

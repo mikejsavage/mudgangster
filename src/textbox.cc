@@ -88,6 +88,14 @@ void textbox_draw( const TextBox * tb ) {
 			if( top < 0 )
 				continue;
 
+			// bg
+			int top_spacing = SPACING / 2;
+			int bot_spacing = SPACING - top_spacing;
+			XSetForeground( UI.display, UI.gc,
+				glyph.bg == SYSTEM ? Style.Colours.system : Style.colours[ 0 ][ glyph.bg ] );
+			XFillRectangle( UI.display, doublebuf, UI.gc, left, top - top_spacing, Style.font.width, Style.font.height + bot_spacing );
+
+			// fg
 			XSetFont( UI.display, UI.gc, ( glyph.bold ? Style.fontBold : Style.font ).font->fid );
 			XSetForeground( UI.display, UI.gc,
 				glyph.fg == SYSTEM ? Style.Colours.system : Style.colours[ glyph.bold ][ glyph.fg ] );

@@ -39,6 +39,12 @@ local function setFG( colour )
 	end
 end
 
+local function setBG( colour )
+	return function()
+		bg = colour
+	end
+end
+
 local Escapes = {
 	m = {
 		[ "0" ] = function()
@@ -59,6 +65,15 @@ local Escapes = {
 		[ "35" ] = setFG( 5 ),
 		[ "36" ] = setFG( 6 ),
 		[ "37" ] = setFG( 7 ),
+
+		[ "40" ] = setBG( 0 ),
+		[ "41" ] = setBG( 1 ),
+		[ "42" ] = setBG( 2 ),
+		[ "43" ] = setBG( 3 ),
+		[ "44" ] = setBG( 4 ),
+		[ "45" ] = setBG( 5 ),
+		[ "46" ] = setBG( 6 ),
+		[ "47" ] = setBG( 7 ),
 	},
 }
 

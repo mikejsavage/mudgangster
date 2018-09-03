@@ -116,7 +116,7 @@ extern "C" int mud_setStatus( lua_State * L ) {
 		lua_gettable( L, 2 );
 		const Colour fg = Colour( lua_tointeger( L, -1 ) );
 
-		lua_pushliteral( L, "fg" );
+		lua_pushliteral( L, "bold" );
 		lua_gettable( L, 2 );
 		const bool bold = lua_toboolean( L, -1 );
 

@@ -1,9 +1,7 @@
-#ifndef _TEXTBOX_H_
-#define _TEXTBOX_H_
+#pragma once
 
-typedef enum
-{
-	BLACK = 0,
+enum Colour {
+	BLACK,
 	RED,
 	GREEN,
 	YELLOW,
@@ -13,54 +11,49 @@ typedef enum
 	WHITE,
 	SYSTEM,
 	NONE,
-} Colour;
-
-typedef struct Text Text;
-struct Text
-{
-	char* buffer;
-	unsigned int len;
-
-	Colour fg;
-	Colour bg;
-	bool bold;
-
-	Text* next;
 };
 
-typedef struct
-{
-	Text* head;
-	Text* tail;
+constexpr size_t MAX_LINE_LENGTH = 2048;
+constexpr size_t SCROLLBACK_SIZE = 1 << 16; // TODO
 
-	unsigned int len;
-} Line;
+// TODO: pack these better
+struct Glyph {
+	char ch;
+	Colour fg, bg;
+	bool bold;
+};
 
-typedef struct
-{
-	Line* lines;
+struct Line {
+	Glyph glyphs[ MAX_LINE_LENGTH ];
+	size_t len = 0;
+};
 
-	int maxLines;
-	int numLines;
-	int head;
+struct Text {
+	Line * lines;
+	size_t head;
+	size_t num_lines;
+};
+
+struct TextBox {
+	Text text;
 
 	int x;
 	int y;
 	int width;
 	int height;
 
-	int rows;
-	int cols;
+	size_t scroll_offset;
 
-	int scrollDelta;
-} TextBox;
+	void scroll( int offset );
+	void page_up();
+	void page_down();
+};
 
-TextBox* textbox_new( unsigned int maxLines );
-void textbox_free( TextBox* self );
-void textbox_setpos( TextBox* self, int x, int y );
-void textbox_setsize( TextBox* self, int width, int height );
-void textbox_add( TextBox* self, const char* str, unsigned int len, Colour fg, Colour bg, bool bold );
-void textbox_newline( TextBox* self );
-void textbox_draw( TextBox* self );
+void textbox_init( TextBox * tb );
+void textbox_term( TextBox * tb );
 
-#endif // _TEXTBOX_H_
+void textbox_setpos( TextBox * tb, int x, int y );
+void textbox_setsize( TextBox * tb, int width, int height );
+void textbox_add( TextBox * tb, const char * str, unsigned int len, Colour fg, Colour bg, bool bold );
+void textbox_newline( TextBox * tb );
+void textbox_draw( const TextBox * tb );

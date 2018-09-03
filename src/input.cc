@@ -45,7 +45,7 @@ void input_send()
 				inputHistoryCount++;
 			}
 
-			inputHistory[ pos ].text = malloc( inputLen );
+			inputHistory[ pos ].text = ( char * ) malloc( inputLen );
 
 			memcpy( inputHistory[ pos ].text, inputBuffer, inputLen );
 			inputHistory[ pos ].len = inputLen;
@@ -138,14 +138,14 @@ void input_down()
 
 void input_left()
 {
-	inputPos = MAX( inputPos - 1, 0 );
+	inputPos = max( inputPos - 1, 0 );
 
 	input_draw();
 }
 
 void input_right()
 {
-	inputPos = MIN( inputPos + 1, inputLen );
+	inputPos = min( inputPos + 1, inputLen );
 
 	input_draw();
 }
@@ -156,8 +156,8 @@ void input_add( char* buffer, int len )
 	{
 		inputBufferSize *= 2;
 
-		inputBuffer = realloc( inputBuffer, inputBufferSize );
-		starsBuffer = realloc( starsBuffer, inputBufferSize );
+		inputBuffer = ( char * ) realloc( inputBuffer, inputBufferSize );
+		starsBuffer = ( char * ) realloc( starsBuffer, inputBufferSize );
 
 		memset( starsBuffer + inputBufferSize / 2, '*', inputBufferSize / 2 );
 	}
@@ -197,8 +197,8 @@ void input_draw()
 
 void input_init()
 {
-	inputBuffer = malloc( inputBufferSize );
-	starsBuffer = malloc( inputBufferSize );
+	inputBuffer = ( char * ) malloc( inputBufferSize );
+	starsBuffer = ( char * ) malloc( inputBufferSize );
 
 	memset( starsBuffer, '*', inputBufferSize );
 }

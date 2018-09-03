@@ -1,16 +1,12 @@
-#ifndef _COMMON_H_
-#define _COMMON_H_
-
-typedef enum { false, true } bool;
+#pragma once
 
 #include <X11/Xlib.h>
 
 #include "config.h"
 #include "textbox.h"
 
-struct
-{
-	Display* display;
+struct UIDefs {
+	Display * display;
 	int screen;
 
 	GC gc;
@@ -18,18 +14,19 @@ struct
 
 	Window window;
 
-	TextBox* textMain;
-	TextBox* textChat;
+	TextBox textMain;
+	TextBox textChat;
 
 	int width;
 	int height;
 	int depth;
 
 	int hasFocus;
-} UI;
+};
 
-typedef struct
-{
+extern UIDefs UI;
+
+struct MudFont {
 	int ascent;
 	int descent;
 
@@ -39,11 +36,10 @@ typedef struct
 	int height;
 	int width;
 
-	XFontStruct* font;
-} MudFont;
+	XFontStruct * font;
+};
 
-struct
-{
+struct StyleDefs {
 	ulong bg;
 	ulong fg;
 
@@ -60,10 +56,8 @@ struct
 	MudFont font;
 	MudFont fontBold;
 
-	union
-	{
-		struct
-		{
+	union {
+		struct {
 			ulong black;
 			ulong red;
 			ulong green;
@@ -87,12 +81,18 @@ struct
 
 		ulong colours[ 2 ][ 8 ];
 	};
-} Style;
+};
 
-#endif // _COMMON_H_
+extern StyleDefs Style;
 
-#define PRETEND_TO_USE( x ) ( void ) ( x )
 #define STRL( x ) ( x ), sizeof( x ) - 1
 
-#define MIN( a, b ) ( ( a ) < ( b ) ? ( a ) : ( b ) )
-#define MAX( a, b ) ( ( a ) > ( b ) ? ( a ) : ( b ) )
+template< typename T >
+constexpr T min( T a, T b ) {
+	return a < b ? a : b;
+}
+
+template< typename T >
+constexpr T max( T a, T b ) {
+	return a > b ? a : b;
+}

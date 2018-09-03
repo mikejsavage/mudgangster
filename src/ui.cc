@@ -11,7 +11,10 @@
 #include "input.h"
 #include "script.h"
 
-Atom wmDeleteWindow;
+UIDefs UI;
+StyleDefs Style;
+
+static Atom wmDeleteWindow;
 
 typedef struct {
 	char c;
@@ -24,8 +27,7 @@ static StatusChar* statusContents = NULL;
 static size_t statusCapacity = 256;
 static size_t statusLen = 0;
 
-void ui_statusDraw()
-{
+void ui_statusDraw() {
 	XSetForeground( UI.display, UI.gc, Style.statusBG );
 	XFillRectangle( UI.display, UI.window, UI.gc, 0, UI.height - ( PADDING * 4 ) - ( Style.font.height * 2 ), UI.width, Style.font.height + ( PADDING * 2 ) );
 
@@ -42,22 +44,17 @@ void ui_statusDraw()
 	}
 }
 
-void ui_statusClear()
-{
+void ui_statusClear() {
 	statusLen = 0;
 }
 
-void ui_statusAdd( const char c, const Colour fg, const bool bold )
-{
-	if( ( statusLen + 1 ) * sizeof( StatusChar ) > statusCapacity )
-	{
+void ui_statusAdd( const char c, const Colour fg, const bool bold ) {
+	if( ( statusLen + 1 ) * sizeof( StatusChar ) > statusCapacity ) {
 		size_t newcapacity = statusCapacity * 2;
-		StatusChar* newcontents = realloc( statusContents, newcapacity );
+		StatusChar * newcontents = ( StatusChar * ) realloc( statusContents, newcapacity );
 
 		if( !newcontents )
-		{
 			return err( 1, "oom" );
-		}
 
 		statusContents = newcontents;
 		statusCapacity = newcapacity;
@@ -67,48 +64,36 @@ void ui_statusAdd( const char c, const Colour fg, const bool bold )
 	statusLen++;
 }
 
-void ui_draw()
-{
+void ui_draw() {
 	XClearWindow( UI.display, UI.window );
 
 	input_draw();
 	ui_statusDraw();
 
-	textbox_draw( UI.textChat );
-	textbox_draw( UI.textMain );
+	textbox_draw( &UI.textChat );
+	textbox_draw( &UI.textMain );
 
 	int spacerY = ( 2 * PADDING ) + ( Style.font.height + SPACING ) * CHAT_ROWS;
 	XSetForeground( UI.display, UI.gc, Style.statusBG );
 	XFillRectangle( UI.display, UI.window, UI.gc, 0, spacerY, UI.width, 1 );
 }
 
-void eventButtonPress( XEvent* event )
-{
-	PRETEND_TO_USE( event );
-}
+void eventButtonPress( XEvent* event ) { }
 
-void eventButtonRelease( XEvent* event )
-{
-	PRETEND_TO_USE( event );
-}
+void eventButtonRelease( XEvent* event ) { }
 
-void eventMessage( XEvent* event )
-{
-	if( ( Atom ) event->xclient.data.l[ 0 ] == wmDeleteWindow )
-	{
+void eventMessage( XEvent* event ) {
+	if( ( Atom ) event->xclient.data.l[ 0 ] == wmDeleteWindow ) {
 		script_handleClose();
 	}
 }
 
-void eventResize( XEvent* event )
-{
+void eventResize( XEvent* event ) {
 	int newWidth = event->xconfigure.width;
 	int newHeight = event->xconfigure.height;
 
 	if( newWidth == UI.width && newHeight == UI.height )
-	{
 		return;
-	}
 
 	UI.width = newWidth;
 	UI.height = newHeight;
@@ -116,25 +101,21 @@ void eventResize( XEvent* event )
 	XSetForeground( UI.display, UI.gc, Style.bg );
 	XFillRectangle( UI.display, UI.window, UI.gc, 0, 0, UI.width, UI.height );
 
-	textbox_setpos( UI.textChat, PADDING, PADDING );
-	textbox_setsize( UI.textChat, UI.width - ( 2 * PADDING ), ( Style.font.height + SPACING ) * CHAT_ROWS );
+	textbox_setpos( &UI.textChat, PADDING, PADDING );
+	textbox_setsize( &UI.textChat, UI.width - ( 2 * PADDING ), ( Style.font.height + SPACING ) * CHAT_ROWS );
 
-	textbox_setpos( UI.textMain, PADDING, ( PADDING * 2 ) + CHAT_ROWS * ( Style.font.height + SPACING ) + 1 );
-	textbox_setsize( UI.textMain, UI.width - ( 2 * PADDING ), UI.height
+	textbox_setpos( &UI.textMain, PADDING, ( PADDING * 2 ) + CHAT_ROWS * ( Style.font.height + SPACING ) + 1 );
+	textbox_setsize( &UI.textMain, UI.width - ( 2 * PADDING ), UI.height
 		- ( ( ( Style.font.height + SPACING ) * CHAT_ROWS ) + ( PADDING * 2 ) )
 		- ( ( Style.font.height * 2 ) + ( PADDING * 5 ) ) - 1
 	);
 }
 
-void eventExpose( XEvent* event )
-{
-	PRETEND_TO_USE( event );
-
+void eventExpose( XEvent* event ) {
 	ui_draw();
 }
 
-void eventKeyPress( XEvent* event )
-{
+void eventKeyPress( XEvent* event ) {
 	#define ADD_MACRO( key, name ) \
 		case key: \
 			script_doMacro( name, sizeof( name ) - 1, shift, ctrl, alt ); \
@@ -151,66 +132,47 @@ void eventKeyPress( XEvent* event )
 
 	int len = XLookupString( keyEvent, keyBuffer, sizeof( keyBuffer ), &key, NULL );
 
-	switch( key )
-	{
+	switch( key ) {
 		case XK_Return:
-		{
 			input_send();
-
 			break;
-		}
 
 		case XK_BackSpace:
 			input_backspace();
-
 			break;
 
 		case XK_Delete:
 			input_delete();
-
 			break;
 
 		case XK_Page_Up:
-			if( UI.textMain->scrollDelta < UI.textMain->numLines )
-			{
-				int toScroll = shift ? 1 : ( UI.textMain->rows - 2 );
-
-				UI.textMain->scrollDelta = MIN( UI.textMain->scrollDelta + toScroll, UI.textMain->numLines );
-
-				textbox_draw( UI.textMain );
-			}
-
+			if( shift )
+				UI.textMain.scroll( 1 );
+			else
+				UI.textMain.page_up();
 			break;
 
 		case XK_Page_Down:
-			if( UI.textMain->scrollDelta > 0 )
-			{
-				int toScroll = shift ? 1 : ( UI.textMain->rows - 2 );
-
-				UI.textMain->scrollDelta = MAX( UI.textMain->scrollDelta - toScroll, 0 );
-
-				textbox_draw( UI.textMain );
-			}
-
+			if( shift )
+				UI.textMain.scroll( -1 );
+			else
+				UI.textMain.page_down();
 			break;
 
 		case XK_Up:
 			input_up();
-
 			break;
+
 		case XK_Down:
 			input_down();
-
 			break;
 
 		case XK_Left:
 			input_left();
-
 			break;
 
 		case XK_Right:
 			input_right();
-
 			break;
 
 		ADD_MACRO( XK_KP_1, "kp1" );
@@ -266,13 +228,9 @@ void eventKeyPress( XEvent* event )
 
 		default:
 			if( ctrl || alt )
-			{
 				script_doMacro( keyBuffer, len, shift, ctrl, alt );
-			}
 			else
-			{
 				input_add( keyBuffer, len );
-			}
 
 			break;
 	}
@@ -281,15 +239,10 @@ void eventKeyPress( XEvent* event )
 }
 
 void eventFocusOut( XEvent* event ) {
-	PRETEND_TO_USE( event );
-
 	UI.hasFocus = 0;
 }
 
-void eventFocusIn( XEvent* event )
-{
-	PRETEND_TO_USE( event );
-
+void eventFocusIn( XEvent* event ) {
 	UI.hasFocus = 1;
 
 	XWMHints* hints = XGetWMHints( UI.display, UI.window );
@@ -298,40 +251,32 @@ void eventFocusIn( XEvent* event )
 	XFree( hints );
 }
 
-void ( *EventHandler[ LASTEvent ] ) ( XEvent* ) =
-{
-	[ ButtonPress ] = eventButtonPress,
-	[ ButtonRelease ] = eventButtonRelease,
-	[ ClientMessage ] = eventMessage,
-	[ ConfigureNotify ] = eventResize,
-	[ Expose ] = eventExpose,
-	[ KeyPress ] = eventKeyPress,
-	[ FocusOut ] = eventFocusOut,
-	[ FocusIn ] = eventFocusIn,
-};
+void ui_handleXEvents() {
+	void ( *EventHandler[ LASTEvent ] )( XEvent* ) = { };
+	EventHandler[ ButtonPress ] = eventButtonPress;
+	EventHandler[ ButtonRelease ] = eventButtonRelease;
+	EventHandler[ ClientMessage ] = eventMessage;
+	EventHandler[ ConfigureNotify ] = eventResize;
+	EventHandler[ Expose ] = eventExpose;
+	EventHandler[ KeyPress ] = eventKeyPress;
+	EventHandler[ FocusOut ] = eventFocusOut;
+	EventHandler[ FocusIn ] = eventFocusIn;
 
-void ui_handleXEvents()
-{
-	while( XPending( UI.display ) )
-	{
+	while( XPending( UI.display ) ) {
 		XEvent event;
 		XNextEvent( UI.display, &event );
 
-		if( EventHandler[ event.type ] )
-		{
+		if( EventHandler[ event.type ] != NULL )
 			EventHandler[ event.type ]( &event );
-		}
 	}
 }
 
-MudFont loadFont( char* fontStr )
-{
+MudFont loadFont( const char * fontStr ) {
 	MudFont font;
 
 	font.font = XLoadQueryFont( UI.display, fontStr );
 
-	if( !font.font )
-	{
+	if( !font.font ) {
 		printf( "could not load font %s\n", fontStr );
 
 		exit( 1 );
@@ -348,8 +293,7 @@ MudFont loadFont( char* fontStr )
 	return font;
 }
 
-void initStyle()
-{
+void initStyle() {
 	#define SETCOLOR( x, c ) \
 		do { \
 			XColor color; \
@@ -395,12 +339,13 @@ void initStyle()
 	#undef SETCOLOR
 	#undef SETXCOLOR
 
-	Style.font = loadFont( "-windows-dina-medium-r-normal--12-120-75-75-c-0-microsoft-cp1252" );
-	Style.fontBold = loadFont( "-windows-dina-bold-r-normal--12-120-75-75-c-0-microsoft-cp1252" );
+	Style.font = loadFont( "-windows-dina-medium-r-normal--10-*-*-*-c-0-*-*" );
+	Style.fontBold = loadFont( "-windows-dina-bold-r-normal--10-*-*-*-c-0-*-*" );
 }
 
-void ui_init()
-{
+void ui_init() {
+	textbox_init( &UI.textMain );
+	textbox_init( &UI.textChat );
 	UI.display = XOpenDisplay( NULL );
 	UI.screen = XDefaultScreen( UI.display );
 	UI.width = -1;
@@ -408,12 +353,10 @@ void ui_init()
 
 	Window root = XRootWindow( UI.display, UI.screen );
 	UI.depth = XDefaultDepth( UI.display, UI.screen );
-	Visual* visual = XDefaultVisual( UI.display, UI.screen );
+	Visual * visual = XDefaultVisual( UI.display, UI.screen );
 	UI.colorMap = XDefaultColormap( UI.display, UI.screen );
 
-	UI.textMain = textbox_new( OUTPUT_MAX_LINES );
-	UI.textChat = textbox_new( OUTPUT_MAX_LINES );
-	statusContents = malloc( statusCapacity * sizeof( StatusChar ) );
+	statusContents = ( StatusChar * ) malloc( statusCapacity * sizeof( StatusChar ) );
 
 	if( statusContents == NULL ) {
 		err( 1, "oom" );
@@ -421,12 +364,10 @@ void ui_init()
 
 	initStyle();
 
-	XSetWindowAttributes attr =
-	{
-		.background_pixel = Style.bg,
-		.event_mask = ExposureMask | StructureNotifyMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask | FocusChangeMask,
-		.colormap = UI.colorMap,
-	};
+	XSetWindowAttributes attr = { };
+	attr.background_pixel = Style.bg,
+	attr.event_mask = ExposureMask | StructureNotifyMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask | FocusChangeMask,
+	attr.colormap = UI.colorMap,
 
 	UI.window = XCreateWindow( UI.display, root, 0, 0, 800, 600, 0, UI.depth, InputOutput, visual, CWBackPixel | CWEventMask | CWColormap, &attr );
 	UI.gc = XCreateGC( UI.display, UI.window, 0, NULL );
@@ -446,10 +387,9 @@ void ui_init()
 	XSetWMProtocols( UI.display, UI.window, &wmDeleteWindow, 1 );
 }
 
-void ui_end()
-{
-	textbox_free( UI.textMain );
-	textbox_free( UI.textChat );
+void ui_end() {
+	textbox_term( &UI.textMain );
+	textbox_term( &UI.textChat );
 	free( statusContents );
 
 	XFreeFont( UI.display, Style.font.font );

@@ -77,17 +77,17 @@ void ui_draw() {
 	XFillRectangle( UI.display, UI.window, UI.gc, 0, spacerY, UI.width, 1 );
 }
 
-void eventButtonPress( XEvent * event ) { }
+static void eventButtonPress( XEvent * event ) { }
 
-void eventButtonRelease( XEvent * event ) { }
+static void eventButtonRelease( XEvent * event ) { }
 
-void eventMessage( XEvent * event ) {
+static void eventMessage( XEvent * event ) {
 	if( ( Atom ) event->xclient.data.l[ 0 ] == wmDeleteWindow ) {
 		script_handleClose();
 	}
 }
 
-void eventResize( XEvent * event ) {
+static void eventResize( XEvent * event ) {
 	int newWidth = event->xconfigure.width;
 	int newHeight = event->xconfigure.height;
 
@@ -110,11 +110,11 @@ void eventResize( XEvent * event ) {
 	);
 }
 
-void eventExpose( XEvent * event ) {
+static void eventExpose( XEvent * event ) {
 	ui_draw();
 }
 
-void eventKeyPress( XEvent * event ) {
+static void eventKeyPress( XEvent * event ) {
 	#define ADD_MACRO( key, name ) \
 		case key: \
 			script_doMacro( name, sizeof( name ) - 1, shift, ctrl, alt ); \
@@ -237,11 +237,11 @@ void eventKeyPress( XEvent * event ) {
 	#undef ADD_MACRO
 }
 
-void eventFocusOut( XEvent * event ) {
+static void eventFocusOut( XEvent * event ) {
 	UI.hasFocus = 0;
 }
 
-void eventFocusIn( XEvent * event ) {
+static void eventFocusIn( XEvent * event ) {
 	UI.hasFocus = 1;
 
 	XWMHints * hints = XGetWMHints( UI.display, UI.window );
@@ -270,7 +270,7 @@ void ui_handleXEvents() {
 	}
 }
 
-MudFont loadFont( const char * fontStr ) {
+static MudFont loadFont( const char * fontStr ) {
 	MudFont font;
 
 	font.font = XLoadQueryFont( UI.display, fontStr );
@@ -292,7 +292,7 @@ MudFont loadFont( const char * fontStr ) {
 	return font;
 }
 
-void initStyle() {
+static void initStyle() {
 	#define SETCOLOR( x, c ) \
 		do { \
 			XColor color; \

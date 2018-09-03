@@ -5,7 +5,6 @@
 #include <X11/Xlib.h>
 
 #include "common.h"
-#include <stdio.h>
 
 static uint8_t pack_style( Colour fg, Colour bg, bool bold ) {
 	STATIC_ASSERT( NUM_COLOURS * NUM_COLOURS * 2 < UINT8_MAX );

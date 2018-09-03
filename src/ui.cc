@@ -23,7 +23,7 @@ typedef struct {
 	bool bold;
 } StatusChar;
 
-static StatusChar* statusContents = NULL;
+static StatusChar * statusContents = NULL;
 static size_t statusCapacity = 256;
 static size_t statusLen = 0;
 
@@ -31,8 +31,7 @@ void ui_statusDraw() {
 	XSetForeground( UI.display, UI.gc, Style.statusBG );
 	XFillRectangle( UI.display, UI.window, UI.gc, 0, UI.height - ( PADDING * 4 ) - ( Style.font.height * 2 ), UI.width, Style.font.height + ( PADDING * 2 ) );
 
-	for( size_t i = 0; i < statusLen; i++ )
-	{
+	for( size_t i = 0; i < statusLen; i++ ) {
 		StatusChar sc = statusContents[ i ];
 
 		XSetFont( UI.display, UI.gc, ( sc.bold ? Style.fontBold : Style.font ).font->fid );
@@ -78,17 +77,17 @@ void ui_draw() {
 	XFillRectangle( UI.display, UI.window, UI.gc, 0, spacerY, UI.width, 1 );
 }
 
-void eventButtonPress( XEvent* event ) { }
+void eventButtonPress( XEvent * event ) { }
 
-void eventButtonRelease( XEvent* event ) { }
+void eventButtonRelease( XEvent * event ) { }
 
-void eventMessage( XEvent* event ) {
+void eventMessage( XEvent * event ) {
 	if( ( Atom ) event->xclient.data.l[ 0 ] == wmDeleteWindow ) {
 		script_handleClose();
 	}
 }
 
-void eventResize( XEvent* event ) {
+void eventResize( XEvent * event ) {
 	int newWidth = event->xconfigure.width;
 	int newHeight = event->xconfigure.height;
 
@@ -111,17 +110,17 @@ void eventResize( XEvent* event ) {
 	);
 }
 
-void eventExpose( XEvent* event ) {
+void eventExpose( XEvent * event ) {
 	ui_draw();
 }
 
-void eventKeyPress( XEvent* event ) {
+void eventKeyPress( XEvent * event ) {
 	#define ADD_MACRO( key, name ) \
 		case key: \
 			script_doMacro( name, sizeof( name ) - 1, shift, ctrl, alt ); \
 			break
 
-	XKeyEvent* keyEvent = &event->xkey;
+	XKeyEvent * keyEvent = &event->xkey;
 
 	char keyBuffer[ 32 ];
 	KeySym key;
@@ -238,21 +237,21 @@ void eventKeyPress( XEvent* event ) {
 	#undef ADD_MACRO
 }
 
-void eventFocusOut( XEvent* event ) {
+void eventFocusOut( XEvent * event ) {
 	UI.hasFocus = 0;
 }
 
-void eventFocusIn( XEvent* event ) {
+void eventFocusIn( XEvent * event ) {
 	UI.hasFocus = 1;
 
-	XWMHints* hints = XGetWMHints( UI.display, UI.window );
+	XWMHints * hints = XGetWMHints( UI.display, UI.window );
 	hints->flags &= ~XUrgencyHint;
 	XSetWMHints( UI.display, UI.window, hints );
 	XFree( hints );
 }
 
 void ui_handleXEvents() {
-	void ( *EventHandler[ LASTEvent ] )( XEvent* ) = { };
+	void ( *EventHandler[ LASTEvent ] )( XEvent * ) = { };
 	EventHandler[ ButtonPress ] = eventButtonPress;
 	EventHandler[ ButtonRelease ] = eventButtonRelease;
 	EventHandler[ ClientMessage ] = eventMessage;
@@ -372,7 +371,7 @@ void ui_init() {
 	UI.window = XCreateWindow( UI.display, root, 0, 0, 800, 600, 0, UI.depth, InputOutput, visual, CWBackPixel | CWEventMask | CWColormap, &attr );
 	UI.gc = XCreateGC( UI.display, UI.window, 0, NULL );
 
-	XWMHints* hints = XAllocWMHints();
+	XWMHints * hints = XAllocWMHints();
 	XSetWMHints( UI.display, UI.window, hints );
 	XFree( hints );
 

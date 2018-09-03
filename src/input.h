@@ -11,7 +11,7 @@ void input_down();
 void input_left();
 void input_right();
 
-void input_add( char* buffer, int len );
+void input_add( const char * buffer, int len );
 
 void input_draw();
 

@@ -56,7 +56,7 @@ extern "C" int mud_handleXEvents( lua_State * ) {
 }
 
 static void generic_print( TextBox * tb, lua_State * L ) {
-	const char* str = luaL_checkstring( L, 1 );
+	const char * str = luaL_checkstring( L, 1 );
 	size_t len = luaL_len( L, 1 );
 
 	Colour fg = Colour( luaL_checkinteger( L, 2 ) );
@@ -103,15 +103,14 @@ extern "C" int mud_setStatus( lua_State * L ) {
 
 	ui_statusClear();
 
-	for( size_t i = 0; i < len; i++ )
-	{
+	for( size_t i = 0; i < len; i++ ) {
 		lua_pushnumber( L, i + 1 );
 		lua_gettable( L, 1 );
 
 		lua_pushliteral( L, "text" );
 		lua_gettable( L, 2 );
 		size_t seglen;
-		const char* str = lua_tolstring( L, -1, &seglen );
+		const char * str = lua_tolstring( L, -1, &seglen );
 
 		lua_pushliteral( L, "fg" );
 		lua_gettable( L, 2 );
@@ -147,7 +146,7 @@ extern "C" int mud_setHandlers( lua_State * L ) {
 
 extern "C" int mud_urgent( lua_State * L ) {
 	if( !UI.hasFocus ) {
-		XWMHints* hints = XGetWMHints( UI.display, UI.window );
+		XWMHints * hints = XGetWMHints( UI.display, UI.window );
 		hints->flags |= XUrgencyHint;
 		XSetWMHints( UI.display, UI.window, hints );
 		XFree( hints );

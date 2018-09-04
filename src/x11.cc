@@ -12,17 +12,6 @@
 #include "script.h"
 #include "textbox.h"
 
-struct TextBufferView {
-	TextBuffer text;
-
-	int x;
-	int y;
-	int width;
-	int height;
-
-	size_t scroll_offset;
-};
-
 struct {
 	Display * display;
 	int screen;
@@ -34,8 +23,8 @@ struct {
 
 	Window window;
 
-	TextBufferView main_text_view;
-	TextBufferView chat_text_view;
+	TextBox main_text;
+	TextBox chat_text;
 
 	int width;
 	int height;
@@ -154,90 +143,6 @@ void ui_dirty( int left, int top, int width, int height ) {
 	// UI.dirty_bottom = max( UI.dirty_bottom, bottom );
 }
 
-static void textview_draw( const TextBufferView * tv ) {
-	if( tv->width == 0 || tv->height == 0 )
-		return;
-
-	ui_fill_rect( tv->x, tv->y, tv->width, tv->height, COLOUR_BG, false );
-
-	/*
-	 * lines refers to lines of text sent from the game
-	 * rows refers to visual rows of text in the client, so when lines get
-	 * wrapped they have more than one row
-	 */
-	size_t lines_drawn = 0;
-	size_t rows_drawn = 0;
-	size_t tv_rows = tv->height / ( Style.font.height + SPACING );
-	size_t tv_cols = tv->width / Style.font.width;
-
-	while( rows_drawn < tv_rows && lines_drawn < tv->text.num_lines ) {
-		const TextBuffer::Line & line = tv->text.lines[ ( tv->text.head + tv->text.num_lines - tv->scroll_offset - lines_drawn ) % tv->text.max_lines ];
-
-		size_t line_rows = 1 + line.len / tv_cols;
-		if( line.len > 0 && line.len % tv_cols == 0 )
-			line_rows--;
-
-		for( size_t i = 0; i < line.len; i++ ) {
-			const TextBuffer::Glyph & glyph = line.glyphs[ i ];
-
-			size_t row = i / tv_cols;
-
-			int left = ( i % tv_cols ) * Style.font.width;
-			int top = tv->height - ( rows_drawn + line_rows - row ) * ( Style.font.height + SPACING );
-			if( top < 0 )
-				continue;
-
-			int fg, bg, bold;
-			unpack_style( glyph.style, &fg, &bg, &bold );
-
-			// bg
-			// TODO: top/bottom spacing seems to be inconsistent here, try with large spacing
-			int top_spacing = SPACING / 2;
-			int bot_spacing = SPACING - top_spacing;
-			ui_fill_rect( tv->x + left, tv->y + top - top_spacing, Style.font.width, Style.font.height + bot_spacing, Colour( bg ), false );
-
-			// fg
-			ui_draw_char( tv->x + left, tv->y + top, glyph.ch, Colour( fg ), bold );
-		}
-
-		lines_drawn++;
-		rows_drawn += line_rows;
-	}
-
-	ui_dirty( tv->x, tv->y, tv->x + tv->width, tv->y + tv->height );
-}
-
-static void textview_scroll( TextBufferView * tv, int offset ) {
-	if( offset < 0 ) {
-		tv->scroll_offset -= min( size_t( -offset ), tv->scroll_offset );
-	}
-	else {
-		tv->scroll_offset = min( tv->scroll_offset + offset, tv->text.num_lines - 1 );
-	}
-
-	textview_draw( tv );
-}
-
-static void textview_page_down( TextBufferView * tv ) {
-	size_t rows = tv->height / ( Style.font.height + SPACING );
-	textview_scroll( tv, -int( rows ) + 1 );
-}
-
-static void textview_page_up( TextBufferView * tv ) {
-	size_t rows = tv->height / ( Style.font.height + SPACING );
-	textview_scroll( tv, rows - 1 );
-}
-
-static void textview_set_pos( TextBufferView * tv, int x, int y ) {
-	tv->x = x;
-	tv->y = y;
-}
-
-static void textview_set_size( TextBufferView * tv, int w, int h ) {
-	tv->width = w;
-	tv->height = h;
-}
-
 static Atom wmDeleteWindow;
 
 typedef struct {
@@ -311,8 +216,8 @@ void ui_draw() {
 	draw_input();
 	ui_draw_status();
 
-	textview_draw( &UI.chat_text_view );
-	textview_draw( &UI.main_text_view );
+	textbox_draw( &UI.chat_text );
+	textbox_draw( &UI.main_text );
 
 	int spacerY = ( 2 * PADDING ) + ( Style.font.height + SPACING ) * CHAT_ROWS;
 	ui_fill_rect( 0, spacerY, UI.width, 1, COLOUR_STATUSBG, false );
@@ -352,11 +257,11 @@ static void eventResize( XEvent * event ) {
 		UI.back_buffer = XCreatePixmap( UI.display, UI.window, UI.max_width, UI.max_height, UI.depth );
 	}
 
-	textview_set_pos( &UI.chat_text_view, PADDING, PADDING );
-	textview_set_size( &UI.chat_text_view, UI.width - ( 2 * PADDING ), ( Style.font.height + SPACING ) * CHAT_ROWS );
+	textbox_set_pos( &UI.chat_text, PADDING, PADDING );
+	textbox_set_size( &UI.chat_text, UI.width - ( 2 * PADDING ), ( Style.font.height + SPACING ) * CHAT_ROWS );
 
-	textview_set_pos( &UI.main_text_view, PADDING, ( PADDING * 2 ) + CHAT_ROWS * ( Style.font.height + SPACING ) + 1 );
-	textview_set_size( &UI.main_text_view, UI.width - ( 2 * PADDING ), UI.height
+	textbox_set_pos( &UI.main_text, PADDING, ( PADDING * 2 ) + CHAT_ROWS * ( Style.font.height + SPACING ) + 1 );
+	textbox_set_size( &UI.main_text, UI.width - ( 2 * PADDING ), UI.height
 		- ( ( ( Style.font.height + SPACING ) * CHAT_ROWS ) + ( PADDING * 2 ) )
 		- ( ( Style.font.height * 2 ) + ( PADDING * 5 ) ) - 1
 	);
@@ -401,16 +306,16 @@ static void eventKeyPress( XEvent * event ) {
 
 		case XK_Page_Up:
 			if( shift )
-				textview_scroll( &UI.main_text_view, 1 );
+				textbox_scroll( &UI.main_text, 1 );
 			else
-				textview_page_up( &UI.main_text_view );
+				textbox_page_up( &UI.main_text );
 			break;
 
 		case XK_Page_Down:
 			if( shift )
-				textview_scroll( &UI.main_text_view, -1 );
+				textbox_scroll( &UI.main_text, -1 );
 			else
-				textview_page_down( &UI.main_text_view );
+				textbox_page_down( &UI.main_text );
 			break;
 
 		case XK_Up:
@@ -595,8 +500,8 @@ static void initStyle() {
 void ui_init() {
 	UI = { };
 
-	text_init( &UI.main_text_view.text, SCROLLBACK_SIZE );
-	text_init( &UI.chat_text_view.text, CHAT_ROWS );
+	textbox_init( &UI.main_text, SCROLLBACK_SIZE );
+	textbox_init( &UI.chat_text, CHAT_ROWS );
 	UI.display = XOpenDisplay( NULL );
 	UI.screen = XDefaultScreen( UI.display );
 	UI.width = -1;
@@ -637,27 +542,27 @@ void ui_init() {
 }
 
 void ui_main_draw() {
-	textview_draw( &UI.main_text_view );
+	textbox_draw( &UI.main_text );
 }
 
 void ui_main_newline() {
-	text_newline( &UI.main_text_view.text );
+	textbox_newline( &UI.main_text );
 }
 
 void ui_main_print( const char * str, size_t len, Colour fg, Colour bg, bool bold ) {
-	text_add( &UI.main_text_view.text, str, len, fg, bg, bold );
+	textbox_add( &UI.main_text, str, len, fg, bg, bold );
 }
 
 void ui_chat_draw() {
-	textview_draw( &UI.chat_text_view );
+	textbox_draw( &UI.chat_text );
 }
 
 void ui_chat_newline() {
-	text_newline( &UI.chat_text_view.text );
+	textbox_newline( &UI.chat_text );
 }
 
 void ui_chat_print( const char * str, size_t len, Colour fg, Colour bg, bool bold ) {
-	text_add( &UI.chat_text_view.text, str, len, fg, bg, bold );
+	textbox_add( &UI.chat_text, str, len, fg, bg, bold );
 }
 
 void ui_urgent() {
@@ -673,9 +578,14 @@ int ui_display_fd() {
 	return ConnectionNumber( UI.display );
 }
 
+void ui_get_font_size( int * fw, int * fh ) {
+	*fw = Style.font.width;
+	*fh = Style.font.height;
+}
+
 void ui_term() {
-	text_destroy( &UI.main_text_view.text );
-	text_destroy( &UI.chat_text_view.text );
+	textbox_destroy( &UI.main_text );
+	textbox_destroy( &UI.chat_text );
 	free( statusContents );
 
 	XFreeFont( UI.display, Style.font.font );

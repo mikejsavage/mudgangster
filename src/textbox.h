@@ -5,7 +5,7 @@
 constexpr size_t MAX_LINE_LENGTH = 2048;
 constexpr size_t SCROLLBACK_SIZE = 1 << 16;
 
-struct TextBuffer {
+struct TextBox {
 	struct Glyph {
 		char ch;
 		uint8_t style;
@@ -21,16 +21,23 @@ struct TextBuffer {
 	size_t num_lines;
 	size_t max_lines;
 
-	// int x, y;
-	// int w, h;
-	// size_t scroll_offset;
-	// bool dirty;
+	int x, y;
+	int w, h;
+	size_t scroll_offset;
 };
 
-void text_init( TextBuffer * tb, size_t scrollback );
+void textbox_init( TextBox * tb, size_t scrollback );
 
-void text_add( TextBuffer * tb, const char * str, size_t len, Colour fg, Colour bg, bool bold );
-void text_newline( TextBuffer * tb );
-void unpack_style( uint8_t style, int * fg, int * bg, int * bold );
+void textbox_add( TextBox * tb, const char * str, size_t len, Colour fg, Colour bg, bool bold );
+void textbox_newline( TextBox * tb );
 
-void text_destroy( TextBuffer * tb );
+void textbox_scroll( TextBox * tb, int offset );
+void textbox_page_down( TextBox * tb );
+void textbox_page_up( TextBox * tb );
+
+void textbox_set_pos( TextBox * tb, int x, int y );
+void textbox_set_size( TextBox * tb, int w, int h );
+
+void textbox_draw( const TextBox * tb );
+
+void textbox_destroy( TextBox * tb );

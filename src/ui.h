@@ -22,6 +22,8 @@ void ui_fill_rect( int left, int top, int width, int height, Colour colour, bool
 void ui_draw_char( int left, int top, char c, Colour colour, bool bold );
 void ui_dirty( int left, int top, int right, int bottom ); // TODO: x/y + w/h?
 
+void ui_get_font_size( int * fw, int * fh );
+
 bool ui_urgent();
 
 int ui_display_fd(); // TODO: very x11 specific!

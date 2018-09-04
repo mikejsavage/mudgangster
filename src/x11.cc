@@ -199,6 +199,18 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold ) {
 		return;
 	}
 
+	if( uint8_t( c ) == 193 ) { // bottom stopper
+		ui_fill_rect( left + left_spacing, top, 1, top_spacing, colour, bold );
+		ui_fill_rect( left, top + top_spacing, Style.font.width, 1, colour, bold );
+		return;
+	}
+
+	if( uint8_t( c ) == 194 ) { // top stopper
+		ui_fill_rect( left + left_spacing, top + top_spacing, 1, bot_spacing, colour, bold );
+		ui_fill_rect( left, top + top_spacing, Style.font.width, 1, colour, bold );
+		return;
+	}
+
 	if( uint8_t( c ) == 195 ) { // left stopper
 		ui_fill_rect( left + left_spacing, top + top_spacing, right_spacing, 1, colour, bold );
 		ui_fill_rect( left + left_spacing, top, 1, line_height, colour, bold );

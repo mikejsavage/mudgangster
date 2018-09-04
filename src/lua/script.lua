@@ -37,9 +37,7 @@ local function loadScript( name, path, padding )
 
 				mud.listen( "shutdown", function()
 					local file = io.open( settingsPath, "w" )
-
 					file:write( serialize.unwrapped( defaults ) )
-
 					file:close()
 				end )
 

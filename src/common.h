@@ -28,22 +28,3 @@ inline To checked_cast( const From & from ) {
 	assert( From( result ) == from );
 	return result;
 }
-
-// TODO: probably don't need most of these
-enum Colour {
-	BLACK,
-	RED,
-	GREEN,
-	YELLOW,
-	BLUE,
-	MAGENTA,
-	CYAN,
-	WHITE,
-	SYSTEM,
-
-	NUM_COLOURS,
-
-	COLOUR_BG,
-	COLOUR_STATUSBG,
-	COLOUR_CURSOR,
-};

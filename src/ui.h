@@ -2,6 +2,25 @@
 
 #include "common.h"
 
+// TODO: probably don't need most of these
+enum Colour {
+	BLACK,
+	RED,
+	GREEN,
+	YELLOW,
+	BLUE,
+	MAGENTA,
+	CYAN,
+	WHITE,
+	SYSTEM,
+
+	NUM_COLOURS,
+
+	COLOUR_BG,
+	COLOUR_STATUSBG,
+	COLOUR_CURSOR,
+};
+
 void ui_handleXEvents(); // TODO: very x11 specific!
 
 void ui_draw_status();
@@ -24,7 +43,7 @@ void ui_dirty( int left, int top, int right, int bottom ); // TODO: x/y + w/h?
 
 void ui_get_font_size( int * fw, int * fh );
 
-bool ui_urgent();
+void ui_urgent();
 
 int ui_display_fd(); // TODO: very x11 specific!
 

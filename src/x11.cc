@@ -1,5 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <err.h>
 
 #include <X11/Xutil.h>
@@ -26,24 +24,19 @@ struct {
 	TextBox main_text;
 	TextBox chat_text;
 
-	int width;
-	int height;
-	int depth;
+	int width, height;
 	int max_width, max_height;
+	int depth;
 
-	bool dirty;
-	int dirty_left, dirty_top, dirty_right, dirty_bottom;
+	// bool dirty;
+	// int dirty_left, dirty_top, dirty_right, dirty_bottom;
 
 	bool has_focus;
 } UI;
 
 struct MudFont {
-	int ascent;
-	int descent;
-
-	int height;
-	int width;
-
+	int ascent, descent;
+	int width, height;
 	XFontStruct * font;
 };
 
@@ -305,9 +298,8 @@ void ui_statusAdd( const char c, const Colour fg, const bool bold ) {
 	if( ( statusLen + 1 ) * sizeof( StatusChar ) > statusCapacity ) {
 		size_t newcapacity = statusCapacity * 2;
 		StatusChar * newcontents = ( StatusChar * ) realloc( statusContents, newcapacity );
-
 		if( !newcontents )
-			return err( 1, "oom" );
+			err( 1, "realloc" );
 
 		statusContents = newcontents;
 		statusCapacity = newcapacity;
@@ -587,22 +579,18 @@ void ui_handleXEvents() {
 			event_handlers[ event.type ]( &event );
 	}
 
-	if( UI.dirty ) {
-		XCopyArea( UI.display, UI.back_buffer, UI.window, UI.gc, UI.dirty_left, UI.dirty_top, UI.dirty_right - UI.dirty_left, UI.dirty_bottom - UI.dirty_top, UI.dirty_left, UI.dirty_top );
-		UI.dirty = false;
-	}
+	// if( UI.dirty ) {
+	// 	XCopyArea( UI.display, UI.back_buffer, UI.window, UI.gc, UI.dirty_left, UI.dirty_top, UI.dirty_right - UI.dirty_left, UI.dirty_bottom - UI.dirty_top, UI.dirty_left, UI.dirty_top );
+	// 	UI.dirty = false;
+	// }
 }
 
 static MudFont loadFont( const char * fontStr ) {
 	MudFont font;
 
 	font.font = XLoadQueryFont( UI.display, fontStr );
-
-	if( !font.font ) {
-		printf( "could not load font %s\n", fontStr );
-
-		exit( 1 );
-	}
+	if( !font.font )
+		errx( 1, "XLoadQueryFont: %s", fontStr );
 
 	font.ascent = font.font->ascent;
 	font.descent = font.font->descent;
@@ -620,9 +608,10 @@ static ulong make_color( const char * hex ) {
 }
 
 static void initStyle() {
-	Style.bg = make_color( "#1a1a1a" );
-	Style.status_bg = make_color( "#333333" );
-	Style.cursor = make_color( "#00ff00" );
+	Style.bg             = make_color( "#1a1a1a" );
+	Style.status_bg      = make_color( "#333333" );
+	Style.cursor         = make_color( "#00ff00" );
+	Style.Colours.system = make_color( "#ffffff" );
 
 	Style.Colours.black   = make_color( "#1a1a1a" );
 	Style.Colours.red     = make_color( "#ca4433" );
@@ -641,8 +630,6 @@ static void initStyle() {
 	Style.Colours.lmagenta = make_color( "#875fff" );
 	Style.Colours.lcyan    = make_color( "#29fbff" );
 	Style.Colours.lwhite   = make_color( "#cedbde" );
-
-	Style.Colours.system =   make_color( "#ffffff" );
 
 	Style.font = loadFont( "-windows-dina-medium-r-normal--10-*-*-*-c-0-*-*" );
 	Style.fontBold = loadFont( "-windows-dina-bold-r-normal--10-*-*-*-c-0-*-*" );
@@ -664,10 +651,8 @@ void ui_init() {
 	UI.colorMap = XDefaultColormap( UI.display, UI.screen );
 
 	statusContents = ( StatusChar * ) malloc( statusCapacity * sizeof( StatusChar ) );
-
-	if( statusContents == NULL ) {
-		err( 1, "oom" );
-	}
+	if( statusContents == NULL )
+		err( 1, "malloc" );
 
 	initStyle();
 

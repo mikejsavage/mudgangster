@@ -116,6 +116,146 @@ void ui_fill_rect( int left, int top, int width, int height, Colour colour, bool
 }
 
 void ui_draw_char( int left, int top, char c, Colour colour, bool bold ) {
+	int left_spacing = Style.font.width / 2;
+	int right_spacing = Style.font.width - left_spacing;
+	int line_height = Style.font.height + SPACING;
+	int top_spacing = line_height / 2;
+	int bot_spacing = line_height - top_spacing;
+
+	if( uint8_t( c ) == 155 ) { // fill
+		ui_fill_rect( left, top, Style.font.width, Style.font.height, colour, bold );
+		return;
+	}
+
+	// TODO: this has a vertical seam. using textbox-space coordinates would help
+	if( uint8_t( c ) == 176 ) { // light shade
+		for( int y = 0; y < Style.font.height; y += 3 ) {
+			for( int x = y % 6 == 0 ? 0 : 1; x < Style.font.width; x += 2 ) {
+				ui_fill_rect( left + x, top + y, 1, 1, colour, bold );
+			}
+		}
+		return;
+	}
+
+	// TODO: this has a horizontal seam but so does mm2k
+	if( uint8_t( c ) == 177 ) { // medium shade
+		for( int y = 0; y < Style.font.height; y += 2 ) {
+			for( int x = y % 4 == 0 ? 1 : 0; x < Style.font.width; x += 2 ) {
+				ui_fill_rect( left + x, top + y, 1, 1, colour, bold );
+			}
+		}
+		return;
+	}
+
+	// TODO: this probably has a horizontal seam
+	if( uint8_t( c ) == 178 ) { // heavy shade
+		for( int y = 0; y < Style.font.height + SPACING; y++ ) {
+			for( int x = y % 2 == 0 ? 1 : 0; x < Style.font.width; x += 2 ) {
+				ui_fill_rect( left + x, top + y, 1, 1, colour, bold );
+			}
+		}
+		return;
+	}
+
+	if( uint8_t( c ) == 179 ) { // vertical
+		ui_fill_rect( left + left_spacing, top, 1, line_height, colour, bold );
+		return;
+		// set_fg( colour, bold );
+		// const char asdf[] = "│";
+		// Xutf8DrawString( UI.display, UI.back_buffer, ( bold ? Style.fontBold : Style.font ).font, UI.gc, left, top + Style.font.ascent + SPACING, asdf, sizeof( asdf ) - 1 );
+	}
+
+	if( uint8_t( c ) == 180 ) { // right stopper
+		ui_fill_rect( left, top + top_spacing, left_spacing, 1, colour, bold );
+		ui_fill_rect( left + left_spacing, top, 1, line_height, colour, bold );
+		return;
+	}
+
+	if( uint8_t( c ) == 186 ) { // double vertical
+		ui_fill_rect( left + left_spacing - 1, top, 1, line_height, colour, bold );
+		ui_fill_rect( left + left_spacing + 1, top, 1, line_height, colour, bold );
+		return;
+	}
+
+	if( uint8_t( c ) == 187 ) { // double top right
+		ui_fill_rect( left, top + top_spacing - 1, right_spacing + 1, 1, colour, bold );
+		ui_fill_rect( left + left_spacing + 1, top + top_spacing, 1, bot_spacing + 1, colour, bold );
+		ui_fill_rect( left, top + top_spacing + 1, right_spacing - 1, 1, colour, bold );
+		ui_fill_rect( left + left_spacing - 1, top + top_spacing + 1, 1, bot_spacing - 1, colour, bold );
+		return;
+	}
+
+	if( uint8_t( c ) == 188 ) { // double bottom right
+		ui_fill_rect( left, top + top_spacing + 1, right_spacing + 1, 1, colour, bold );
+		ui_fill_rect( left + left_spacing + 1, top, 1, top_spacing + 1, colour, bold );
+		ui_fill_rect( left, top + top_spacing - 1, right_spacing - 1, 1, colour, bold );
+		ui_fill_rect( left + left_spacing - 1, top, 1, top_spacing - 1, colour, bold );
+		return;
+	}
+
+	if( uint8_t( c ) == 191 ) { // top right
+		ui_fill_rect( left, top + top_spacing, left_spacing, 1, colour, bold );
+		ui_fill_rect( left + left_spacing, top + top_spacing, 1, bot_spacing, colour, bold );
+		return;
+	}
+
+	if( uint8_t( c ) == 192 ) { // bottom left
+		ui_fill_rect( left + left_spacing, top + top_spacing, right_spacing, 1, colour, bold );
+		ui_fill_rect( left + left_spacing, top, 1, top_spacing, colour, bold );
+		return;
+	}
+
+	if( uint8_t( c ) == 195 ) { // left stopper
+		ui_fill_rect( left + left_spacing, top + top_spacing, right_spacing, 1, colour, bold );
+		ui_fill_rect( left + left_spacing, top, 1, line_height, colour, bold );
+		return;
+	}
+
+	if( uint8_t( c ) == 196 ) { // horizontal
+		ui_fill_rect( left, top + top_spacing, Style.font.width, 1, colour, bold );
+		return;
+	}
+
+	if( uint8_t( c ) == 197 ) { // cross
+		ui_fill_rect( left, top + top_spacing, Style.font.width, 1, colour, bold );
+		ui_fill_rect( left + left_spacing, top, 1, line_height, colour, bold );
+		return;
+	}
+
+	if( uint8_t( c ) == 200 ) { // double bottom left
+		ui_fill_rect( left + left_spacing - 1, top + top_spacing + 1, right_spacing + 1, 1, colour, bold );
+		ui_fill_rect( left + left_spacing - 1, top, 1, top_spacing + 1, colour, bold );
+		ui_fill_rect( left + left_spacing + 1, top + top_spacing - 1, right_spacing - 1, 1, colour, bold );
+		ui_fill_rect( left + left_spacing + 1, top, 1, top_spacing - 1, colour, bold );
+		return;
+	}
+
+	if( uint8_t( c ) == 201 ) { // double top left
+		ui_fill_rect( left + left_spacing - 1, top + top_spacing - 1, right_spacing + 1, 1, colour, bold );
+		ui_fill_rect( left + left_spacing - 1, top + top_spacing - 1, 1, bot_spacing + 1, colour, bold );
+		ui_fill_rect( left + left_spacing + 1, top + top_spacing + 1, right_spacing - 1, 1, colour, bold );
+		ui_fill_rect( left + left_spacing + 1, top + top_spacing + 1, 1, bot_spacing - 1, colour, bold );
+		return;
+	}
+
+	if( uint8_t( c ) == 205 ) { // double horizontal
+		ui_fill_rect( left, top + top_spacing - 1, Style.font.width, 1, colour, bold );
+		ui_fill_rect( left, top + top_spacing + 1, Style.font.width, 1, colour, bold );
+		return;
+	}
+
+	if( uint8_t( c ) == 217 ) { // bottom right
+		ui_fill_rect( left, top + top_spacing, right_spacing, 1, colour, bold );
+		ui_fill_rect( left + left_spacing, top, 1, top_spacing, colour, bold );
+		return;
+	}
+
+	if( uint8_t( c ) == 218 ) { // top left
+		ui_fill_rect( left + left_spacing, top + top_spacing, right_spacing, 1, colour, bold );
+		ui_fill_rect( left + left_spacing, top + top_spacing, 1, bot_spacing, colour, bold );
+		return;
+	}
+
 	XSetFont( UI.display, UI.gc, ( bold ? Style.fontBold : Style.font ).font->fid );
 	set_fg( colour, bold );
 	XDrawString( UI.display, UI.back_buffer, UI.gc, left, top + Style.font.ascent + SPACING, &c, 1 );
@@ -427,6 +567,16 @@ void ui_handleXEvents() {
 	event_handlers[ KeyPress ] = eventKeyPress;
 	event_handlers[ FocusOut ] = eventFocusOut;
 	event_handlers[ FocusIn ] = eventFocusIn;
+
+	const char * event_names[ LASTEvent ] = { };
+	event_names[ ButtonPress ] = "ButtonPress";
+	event_names[ ButtonRelease ] = "ButtonRelease";
+	event_names[ ClientMessage ] = "ClientMessage";
+	event_names[ ConfigureNotify ] = "ConfigureNotify";
+	event_names[ Expose ] = "Expose";
+	event_names[ KeyPress ] = "KeyPress";
+	event_names[ FocusOut ] = "FocusOut";
+	event_names[ FocusIn ] = "FocusIn";
 
 	while( XPending( UI.display ) ) {
 		XEvent event;

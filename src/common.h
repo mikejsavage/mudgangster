@@ -42,4 +42,8 @@ enum Colour {
 	SYSTEM,
 
 	NUM_COLOURS,
+
+	COLOUR_BG,
+	COLOUR_STATUSBG,
+	COLOUR_CURSOR,
 };

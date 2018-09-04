@@ -27,6 +27,8 @@ struct {
 	Display * display;
 	int screen;
 
+	Pixmap back_buffer;
+
 	GC gc;
 	Colormap colorMap;
 
@@ -38,6 +40,10 @@ struct {
 	int width;
 	int height;
 	int depth;
+	int max_width, max_height;
+
+	bool dirty;
+	int dirty_left, dirty_top, dirty_right, dirty_bottom;
 
 	bool has_focus;
 } UI;
@@ -54,16 +60,7 @@ struct MudFont {
 
 struct {
 	ulong bg;
-	ulong fg;
-
-	XColor xBG;
-	XColor xFG;
-
-	ulong statusBG;
-	ulong statusFG;
-
-	ulong inputBG;
-	ulong inputFG;
+	ulong status_bg;
 	ulong cursor;
 
 	MudFont font;
@@ -96,14 +93,72 @@ struct {
 	};
 } Style;
 
+static void set_fg( Colour colour, bool bold ) {
+	ulong c;
+
+	switch( colour ) {
+		case SYSTEM:
+			c = Style.Colours.system;
+			break;
+
+		case COLOUR_BG:
+			c = Style.bg;
+			break;
+
+		case COLOUR_STATUSBG:
+			c = Style.status_bg;
+			break;
+
+		case COLOUR_CURSOR:
+			c = Style.cursor;
+			break;
+
+		default:
+			c = Style.colours[ bold ][ colour ];
+			break;
+	}
+
+	XSetForeground( UI.display, UI.gc, c );
+}
+
+void ui_fill_rect( int left, int top, int width, int height, Colour colour, bool bold ) {
+	set_fg( colour, bold );
+	XFillRectangle( UI.display, UI.back_buffer, UI.gc, left, top, width, height );
+}
+
+void ui_draw_char( int left, int top, char c, Colour colour, bool bold ) {
+	XSetFont( UI.display, UI.gc, ( bold ? Style.fontBold : Style.font ).font->fid );
+	set_fg( colour, bold );
+	XDrawString( UI.display, UI.back_buffer, UI.gc, left, top + Style.font.ascent + SPACING, &c, 1 );
+}
+
+void ui_dirty( int left, int top, int width, int height ) {
+	XCopyArea( UI.display, UI.back_buffer, UI.window, UI.gc, left, top, width, height, left, top );
+
+	// int right = left + width;
+	// int bottom = top + height;
+        //
+	// printf( "make dirty %d %d %d %d\n", left, top, right, bottom );
+	// if( !UI.dirty ) {
+	// 	UI.dirty = true;
+	// 	UI.dirty_left = left;
+	// 	UI.dirty_top = top;
+	// 	UI.dirty_right = right;
+	// 	UI.dirty_bottom = bottom;
+	// 	return;
+	// }
+        //
+	// UI.dirty_left = min( UI.dirty_left, left );
+	// UI.dirty_top = min( UI.dirty_top, top );
+	// UI.dirty_right = max( UI.dirty_right, right );
+	// UI.dirty_bottom = max( UI.dirty_bottom, bottom );
+}
+
 static void textview_draw( const TextBufferView * tv ) {
 	if( tv->width == 0 || tv->height == 0 )
 		return;
 
-	Pixmap doublebuf = XCreatePixmap( UI.display, UI.window, tv->width, tv->height, UI.depth );
-
-	XSetForeground( UI.display, UI.gc, Style.bg );
-	XFillRectangle( UI.display, doublebuf, UI.gc, 0, 0, tv->width, tv->height );
+	ui_fill_rect( tv->x, tv->y, tv->width, tv->height, COLOUR_BG, false );
 
 	/*
 	 * lines refers to lines of text sent from the game
@@ -136,23 +191,20 @@ static void textview_draw( const TextBufferView * tv ) {
 			unpack_style( glyph.style, &fg, &bg, &bold );
 
 			// bg
+			// TODO: top/bottom spacing seems to be inconsistent here, try with large spacing
 			int top_spacing = SPACING / 2;
 			int bot_spacing = SPACING - top_spacing;
-			XSetForeground( UI.display, UI.gc, bg == SYSTEM ? Style.Colours.system : Style.colours[ 0 ][ bg ] );
-			XFillRectangle( UI.display, doublebuf, UI.gc, left, top - top_spacing, Style.font.width, Style.font.height + bot_spacing );
+			ui_fill_rect( tv->x + left, tv->y + top - top_spacing, Style.font.width, Style.font.height + bot_spacing, Colour( bg ), false );
 
 			// fg
-			XSetFont( UI.display, UI.gc, ( bold ? Style.fontBold : Style.font ).font->fid );
-			XSetForeground( UI.display, UI.gc, fg == SYSTEM ? Style.Colours.system : Style.colours[ bold ][ fg ] );
-			XDrawString( UI.display, doublebuf, UI.gc, left, top + Style.font.ascent + SPACING, &glyph.ch, 1 );
+			ui_draw_char( tv->x + left, tv->y + top, glyph.ch, Colour( fg ), bold );
 		}
 
 		lines_drawn++;
 		rows_drawn += line_rows;
 	}
 
-	XCopyArea( UI.display, doublebuf, UI.window, UI.gc, 0, 0, tv->width, tv->height, tv->x, tv->y );
-	XFreePixmap( UI.display, doublebuf );
+	ui_dirty( tv->x, tv->y, tv->x + tv->width, tv->y + tv->height );
 }
 
 static void textview_scroll( TextBufferView * tv, int offset ) {
@@ -220,19 +272,17 @@ void ui_statusAdd( const char c, const Colour fg, const bool bold ) {
 }
 
 void ui_draw_status() {
-	XSetForeground( UI.display, UI.gc, Style.statusBG );
-	XFillRectangle( UI.display, UI.window, UI.gc, 0, UI.height - ( PADDING * 4 ) - ( Style.font.height * 2 ), UI.width, Style.font.height + ( PADDING * 2 ) );
+	ui_fill_rect( 0, UI.height - PADDING * 4 - Style.font.height * 2, UI.width, Style.font.height + PADDING * 2, COLOUR_STATUSBG, false );
 
 	for( size_t i = 0; i < statusLen; i++ ) {
 		StatusChar sc = statusContents[ i ];
 
-		XSetFont( UI.display, UI.gc, ( sc.bold ? Style.fontBold : Style.font ).font->fid );
-		XSetForeground( UI.display, UI.gc, Style.colours[ sc.bold ][ sc.fg ] );
-
 		int x = PADDING + i * Style.font.width;
-		int y = UI.height - ( PADDING * 3 ) - Style.font.height - Style.font.descent;
-		XDrawString( UI.display, UI.window, UI.gc, x, y, &sc.c, 1 );
+		int y = UI.height - ( PADDING * 3 ) - Style.font.height * 2 - SPACING;
+		ui_draw_char( x, y, sc.c, sc.fg, sc.bold );
 	}
+
+	ui_dirty( 0, UI.height - ( PADDING * 4 ) - ( Style.font.height * 2 ), UI.width, Style.font.height + ( PADDING * 2 ) );
 }
 
 void draw_input() {
@@ -240,23 +290,23 @@ void draw_input() {
 
 	XSetFont( UI.display, UI.gc, Style.font.font->fid );
 
-	XSetForeground( UI.display, UI.gc, Style.bg );
-	XFillRectangle( UI.display, UI.window, UI.gc, PADDING, UI.height - ( PADDING + Style.font.height ), UI.width - 6, Style.font.height );
+	int top = UI.height - PADDING - Style.font.height;
+	ui_fill_rect( PADDING, top, UI.width - PADDING * 2, Style.font.height, COLOUR_BG, false );
 
-	XSetForeground( UI.display, UI.gc, Style.fg );
-	XDrawString( UI.display, UI.window, UI.gc, PADDING, UI.height - ( PADDING + Style.font.descent ), input.buf, input.len );
+	for( size_t i = 0; i < input.len; i++ )
+		ui_draw_char( PADDING + i * Style.font.width, top - SPACING, input.buf[ i ], WHITE, false );
 
-	XSetForeground( UI.display, UI.gc, Style.cursor );
-	XFillRectangle( UI.display, UI.window, UI.gc, PADDING + Style.font.width * input.cursor_pos, UI.height - ( PADDING + Style.font.height ), Style.font.width, Style.font.height );
+	ui_fill_rect( PADDING + input.cursor_pos * Style.font.width, top, Style.font.width, Style.font.height, COLOUR_CURSOR, false );
 
 	if( input.cursor_pos < input.len ) {
-		XSetForeground( UI.display, UI.gc, Style.bg );
-		XDrawString( UI.display, UI.window, UI.gc, PADDING + Style.font.width * input.cursor_pos, UI.height - ( PADDING + Style.font.descent ), input.buf + input.cursor_pos, 1 );
+		ui_draw_char( PADDING + input.cursor_pos * Style.font.width, top - SPACING, input.buf[ input.cursor_pos ], COLOUR_BG, false );
 	}
+
+	ui_dirty( PADDING, UI.height - ( PADDING + Style.font.height ), UI.width - PADDING * 2, Style.font.height );
 }
 
 void ui_draw() {
-	XClearWindow( UI.display, UI.window );
+	ui_fill_rect( 0, 0, UI.width, UI.height, COLOUR_BG, false );
 
 	draw_input();
 	ui_draw_status();
@@ -265,8 +315,9 @@ void ui_draw() {
 	textview_draw( &UI.main_text_view );
 
 	int spacerY = ( 2 * PADDING ) + ( Style.font.height + SPACING ) * CHAT_ROWS;
-	XSetForeground( UI.display, UI.gc, Style.statusBG );
-	XFillRectangle( UI.display, UI.window, UI.gc, 0, spacerY, UI.width, 1 );
+	ui_fill_rect( 0, spacerY, UI.width, 1, COLOUR_STATUSBG, false );
+
+	ui_dirty( 0, 0, UI.width, UI.height );
 }
 
 static void eventButtonPress( XEvent * event ) { }
@@ -280,14 +331,26 @@ static void eventMessage( XEvent * event ) {
 }
 
 static void eventResize( XEvent * event ) {
-	int newWidth = event->xconfigure.width;
-	int newHeight = event->xconfigure.height;
+	int old_width = UI.width;
+	int old_height = UI.height;
 
-	if( newWidth == UI.width && newHeight == UI.height )
+	UI.width = event->xconfigure.width;
+	UI.height = event->xconfigure.height;
+
+	if( UI.width == old_width && UI.height == old_height )
 		return;
 
-	UI.width = newWidth;
-	UI.height = newHeight;
+	int old_max_width = UI.max_width;
+	int old_max_height = UI.max_height;
+	UI.max_width = max( UI.max_width, UI.width );
+	UI.max_height = max( UI.max_height, UI.height );
+
+	if( UI.max_width != old_max_width || UI.max_height != old_max_height ) {
+		if( old_width != -1 ) {
+			XFreePixmap( UI.display, UI.back_buffer );
+		}
+		UI.back_buffer = XCreatePixmap( UI.display, UI.window, UI.max_width, UI.max_height, UI.depth );
+	}
 
 	XSetForeground( UI.display, UI.gc, Style.bg );
 	XFillRectangle( UI.display, UI.window, UI.gc, 0, 0, UI.width, UI.height );
@@ -428,7 +491,7 @@ static void eventKeyPress( XEvent * event ) {
 			if( ctrl || alt ) {
 				script_doMacro( keyBuffer, len, shift, ctrl, alt );
 			}
-			else {
+			else if( len > 0 ) {
 				input_add( keyBuffer, len );
 				draw_input();
 			}
@@ -453,22 +516,27 @@ static void eventFocusIn( XEvent * event ) {
 }
 
 void ui_handleXEvents() {
-	void ( *EventHandler[ LASTEvent ] )( XEvent * ) = { };
-	EventHandler[ ButtonPress ] = eventButtonPress;
-	EventHandler[ ButtonRelease ] = eventButtonRelease;
-	EventHandler[ ClientMessage ] = eventMessage;
-	EventHandler[ ConfigureNotify ] = eventResize;
-	EventHandler[ Expose ] = eventExpose;
-	EventHandler[ KeyPress ] = eventKeyPress;
-	EventHandler[ FocusOut ] = eventFocusOut;
-	EventHandler[ FocusIn ] = eventFocusIn;
+	void ( *event_handlers[ LASTEvent ] )( XEvent * ) = { };
+	event_handlers[ ButtonPress ] = eventButtonPress;
+	event_handlers[ ButtonRelease ] = eventButtonRelease;
+	event_handlers[ ClientMessage ] = eventMessage;
+	event_handlers[ ConfigureNotify ] = eventResize;
+	event_handlers[ Expose ] = eventExpose;
+	event_handlers[ KeyPress ] = eventKeyPress;
+	event_handlers[ FocusOut ] = eventFocusOut;
+	event_handlers[ FocusIn ] = eventFocusIn;
 
 	while( XPending( UI.display ) ) {
 		XEvent event;
 		XNextEvent( UI.display, &event );
 
-		if( EventHandler[ event.type ] != NULL )
-			EventHandler[ event.type ]( &event );
+		if( event_handlers[ event.type ] != NULL )
+			event_handlers[ event.type ]( &event );
+	}
+
+	if( UI.dirty ) {
+		XCopyArea( UI.display, UI.back_buffer, UI.window, UI.gc, UI.dirty_left, UI.dirty_top, UI.dirty_right - UI.dirty_left, UI.dirty_bottom - UI.dirty_top, UI.dirty_left, UI.dirty_top );
+		UI.dirty = false;
 	}
 }
 
@@ -492,51 +560,36 @@ static MudFont loadFont( const char * fontStr ) {
 	return font;
 }
 
+static ulong make_color( const char * hex ) {
+	XColor color;
+	XAllocNamedColor( UI.display, UI.colorMap, hex, &color, &color );
+	return color.pixel;
+}
+
 static void initStyle() {
-	#define SETCOLOR( x, c ) \
-		do { \
-			XColor color; \
-			XAllocNamedColor( UI.display, UI.colorMap, c, &color, &color ); \
-			x = color.pixel; \
-		} while( false )
-	#define SETXCOLOR( x, y, c ) \
-		do { \
-			XColor color; \
-			XAllocNamedColor( UI.display, UI.colorMap, c, &color, &color ); \
-			x = color.pixel; \
-			y = color; \
-		} while( false )
+	Style.bg = make_color( "#1a1a1a" );
+	Style.status_bg = make_color( "#333333" );
+	Style.cursor = make_color( "#00ff00" );
 
-	SETXCOLOR( Style.bg, Style.xBG, "#1a1a1a" );
-	SETXCOLOR( Style.fg, Style.xFG, "#b6c2c4" );
+	Style.Colours.black   = make_color( "#1a1a1a" );
+	Style.Colours.red     = make_color( "#ca4433" );
+	Style.Colours.green   = make_color( "#178a3a" );
+	Style.Colours.yellow  = make_color( "#dc7c2a" );
+	Style.Colours.blue    = make_color( "#415e87" );
+	Style.Colours.magenta = make_color( "#5e468c" );
+	Style.Colours.cyan    = make_color( "#35789b" );
+	Style.Colours.white   = make_color( "#b6c2c4" );
 
-	SETCOLOR( Style.cursor, "#00ff00" );
+	Style.Colours.lblack   = make_color( "#666666" );
+	Style.Colours.lred     = make_color( "#ff2954" );
+	Style.Colours.lgreen   = make_color( "#5dd030" );
+	Style.Colours.lyellow  = make_color( "#fafc4f" );
+	Style.Colours.lblue    = make_color( "#3581e1" );
+	Style.Colours.lmagenta = make_color( "#875fff" );
+	Style.Colours.lcyan    = make_color( "#29fbff" );
+	Style.Colours.lwhite   = make_color( "#cedbde" );
 
-	SETCOLOR( Style.statusBG, "#333333" );
-	SETCOLOR( Style.statusFG, "#ffffff" );
-
-	SETCOLOR( Style.Colours.black,   "#1a1a1a" );
-	SETCOLOR( Style.Colours.red,     "#ca4433" );
-	SETCOLOR( Style.Colours.green,   "#178a3a" );
-	SETCOLOR( Style.Colours.yellow,  "#dc7c2a" );
-	SETCOLOR( Style.Colours.blue,    "#415e87" );
-	SETCOLOR( Style.Colours.magenta, "#5e468c" );
-	SETCOLOR( Style.Colours.cyan,    "#35789b" );
-	SETCOLOR( Style.Colours.white,   "#b6c2c4" );
-
-	SETCOLOR( Style.Colours.lblack,   "#666666" );
-	SETCOLOR( Style.Colours.lred,     "#ff2954" );
-	SETCOLOR( Style.Colours.lgreen,   "#5dd030" );
-	SETCOLOR( Style.Colours.lyellow,  "#fafc4f" );
-	SETCOLOR( Style.Colours.lblue,    "#3581e1" );
-	SETCOLOR( Style.Colours.lmagenta, "#875fff" );
-	SETCOLOR( Style.Colours.lcyan,    "#29fbff" );
-	SETCOLOR( Style.Colours.lwhite,   "#cedbde" );
-
-	SETCOLOR( Style.Colours.system,   "#ffffff" );
-
-	#undef SETCOLOR
-	#undef SETXCOLOR
+	Style.Colours.system =   make_color( "#ffffff" );
 
 	Style.font = loadFont( "-windows-dina-medium-r-normal--10-*-*-*-c-0-*-*" );
 	Style.fontBold = loadFont( "-windows-dina-bold-r-normal--10-*-*-*-c-0-*-*" );
@@ -566,7 +619,6 @@ void ui_init() {
 	initStyle();
 
 	XSetWindowAttributes attr = { };
-	attr.background_pixel = Style.bg,
 	attr.event_mask = ExposureMask | StructureNotifyMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask | FocusChangeMask,
 	attr.colormap = UI.colorMap,
 
@@ -579,7 +631,6 @@ void ui_init() {
 
 	Cursor cursor = XCreateFontCursor( UI.display, XC_xterm );
 	XDefineCursor( UI.display, UI.window, cursor );
-	XRecolorCursor( UI.display, cursor, &Style.xFG, &Style.xBG );
 
 	XStoreName( UI.display, UI.window, "Mud Gangster" );
 	XMapWindow( UI.display, UI.window );

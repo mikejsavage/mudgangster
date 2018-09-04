@@ -20,6 +20,11 @@ struct TextBuffer {
 	size_t head;
 	size_t num_lines;
 	size_t max_lines;
+
+	// int x, y;
+	// int w, h;
+	// size_t scroll_offset;
+	// bool dirty;
 };
 
 void text_init( TextBuffer * tb, size_t scrollback );

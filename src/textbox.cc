@@ -119,7 +119,7 @@ void textbox_draw( const TextBox * tb ) {
 	size_t tb_rows = num_rows( tb->h );
 	size_t tb_cols = tb->w / fw;
 
-	while( rows_drawn < tb_rows && lines_drawn < tb->num_lines ) {
+	while( rows_drawn < tb_rows && lines_drawn + tb->scroll_offset < tb->num_lines ) {
 		const TextBox::Line & line = tb->lines[ ( tb->head + tb->num_lines - tb->scroll_offset - lines_drawn ) % tb->max_lines ];
 
 		size_t line_rows = 1 + line.len / tb_cols;

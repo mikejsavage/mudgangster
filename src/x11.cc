@@ -352,9 +352,6 @@ static void eventResize( XEvent * event ) {
 		UI.back_buffer = XCreatePixmap( UI.display, UI.window, UI.max_width, UI.max_height, UI.depth );
 	}
 
-	XSetForeground( UI.display, UI.gc, Style.bg );
-	XFillRectangle( UI.display, UI.window, UI.gc, 0, 0, UI.width, UI.height );
-
 	textview_set_pos( &UI.chat_text_view, PADDING, PADDING );
 	textview_set_size( &UI.chat_text_view, UI.width - ( 2 * PADDING ), ( Style.font.height + SPACING ) * CHAT_ROWS );
 

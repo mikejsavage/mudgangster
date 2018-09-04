@@ -443,16 +443,16 @@ static void event_mouse_move( XEvent * xevent ) {
 	}
 
 	if( UI.chat_text.selecting ) {
-		int x = event->x - UI.main_text.x;
-		int y = event->y - UI.main_text.y;
+		int x = event->x - UI.chat_text.x;
+		int y = event->y - UI.chat_text.y;
 
-		int my = UI.main_text.h - y;
+		int my = UI.chat_text.h - y;
 
 		int row = my / ( Style.font.height + SPACING );
 		int col = x / Style.font.width;
 
-		UI.main_text.selection_end_col = col;
-		UI.main_text.selection_end_row = row;
+		UI.chat_text.selection_end_col = col;
+		UI.chat_text.selection_end_row = row;
 
 		textbox_draw( &UI.chat_text );
 	}

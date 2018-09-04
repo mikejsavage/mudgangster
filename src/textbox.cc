@@ -153,5 +153,5 @@ void textbox_draw( const TextBox * tb ) {
 		rows_drawn += line_rows;
 	}
 
-	ui_dirty( tb->x, tb->y, tb->x + tb->w, tb->y + tb->h );
+	ui_dirty( tb->x, tb->y, tb->w, tb->h );
 }

@@ -122,10 +122,11 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold ) {
 	int top_spacing = line_height / 2;
 	int bot_spacing = line_height - top_spacing;
 
-	if( uint8_t( c ) == 155 ) { // fill
-		ui_fill_rect( left, top, Style.font.width, Style.font.height, colour, bold );
-		return;
-	}
+	// TODO: not the right char...
+	// if( uint8_t( c ) == 155 ) { // fill
+	// 	ui_fill_rect( left, top, Style.font.width, Style.font.height, colour, bold );
+	// 	return;
+	// }
 
 	// TODO: this has a vertical seam. using textbox-space coordinates would help
 	if( uint8_t( c ) == 176 ) { // light shade

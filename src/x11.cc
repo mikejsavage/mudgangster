@@ -108,7 +108,7 @@ void ui_fill_rect( int left, int top, int width, int height, Colour colour, bool
 	XFillRectangle( UI.display, UI.back_buffer, UI.gc, left, top, width, height );
 }
 
-void ui_draw_char( int left, int top, char c, Colour colour, bool bold ) {
+void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool bold_font ) {
 	int left_spacing = Style.font.width / 2;
 	int right_spacing = Style.font.width - left_spacing;
 	int line_height = Style.font.height + SPACING;
@@ -262,7 +262,7 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold ) {
 		return;
 	}
 
-	XSetFont( UI.display, UI.gc, ( bold ? Style.fontBold : Style.font ).font->fid );
+	XSetFont( UI.display, UI.gc, ( bold || bold_font ? Style.fontBold : Style.font ).font->fid );
 	set_fg( colour, bold );
 	XDrawString( UI.display, UI.back_buffer, UI.gc, left, top + Style.font.ascent + SPACING, &c, 1 );
 }
@@ -370,22 +370,106 @@ void ui_draw() {
 	ui_dirty( 0, 0, UI.width, UI.height );
 }
 
-static void eventButtonPress( XEvent * event ) { }
+static void event_mouse_down( XEvent * xevent ) {
+	const XButtonEvent * event = &xevent->xbutton;
 
-static void eventButtonRelease( XEvent * event ) { }
+	if( event->x >= UI.main_text.x && event->x < UI.main_text.x + UI.main_text.w && event->y >= UI.main_text.y && event->y < UI.main_text.y + UI.main_text.h ) {
+		int x = event->x - UI.main_text.x;
+		int y = event->y - UI.main_text.y;
 
-static void eventMessage( XEvent * event ) {
-	if( ( Atom ) event->xclient.data.l[ 0 ] == wmDeleteWindow ) {
+		int my = UI.main_text.h - y;
+
+		int row = my / ( Style.font.height + SPACING );
+		int col = x / Style.font.width;
+
+		UI.main_text.selecting = true;
+		UI.main_text.selection_start_col = col;
+		UI.main_text.selection_start_row = row;
+		UI.main_text.selection_end_col = col;
+		UI.main_text.selection_end_row = row;
+
+		textbox_draw( &UI.main_text );
+	}
+
+	if( event->x >= UI.chat_text.x && event->x < UI.chat_text.x + UI.chat_text.w && event->y >= UI.chat_text.y && event->y < UI.chat_text.y + UI.chat_text.h ) {
+		int x = event->x - UI.chat_text.x;
+		int y = event->y - UI.chat_text.y;
+
+		int my = UI.chat_text.h - y;
+
+		int row = my / ( Style.font.height + SPACING );
+		int col = x / Style.font.width;
+
+		UI.chat_text.selecting = true;
+		UI.chat_text.selection_start_col = col;
+		UI.chat_text.selection_start_row = row;
+		UI.chat_text.selection_end_col = col;
+		UI.chat_text.selection_end_row = row;
+
+		textbox_draw( &UI.chat_text );
+	}
+}
+
+static void event_mouse_up( XEvent * xevent ) {
+	const XButtonEvent * event = &xevent->xbutton;
+
+	if( UI.main_text.selecting ) {
+		UI.main_text.selecting = false;
+		textbox_draw( &UI.main_text );
+	}
+
+	if( UI.chat_text.selecting ) {
+		UI.chat_text.selecting = false;
+		textbox_draw( &UI.chat_text );
+	}
+}
+
+static void event_mouse_move( XEvent * xevent ) {
+	const XMotionEvent * event = &xevent->xmotion;
+
+	if( UI.main_text.selecting ) {
+		int x = event->x - UI.main_text.x;
+		int y = event->y - UI.main_text.y;
+
+		int my = UI.main_text.h - y;
+
+		int row = my / ( Style.font.height + SPACING );
+		int col = x / Style.font.width;
+
+		UI.main_text.selection_end_col = col;
+		UI.main_text.selection_end_row = row;
+
+		textbox_draw( &UI.main_text );
+	}
+
+	if( UI.chat_text.selecting ) {
+		int x = event->x - UI.main_text.x;
+		int y = event->y - UI.main_text.y;
+
+		int my = UI.main_text.h - y;
+
+		int row = my / ( Style.font.height + SPACING );
+		int col = x / Style.font.width;
+
+		UI.main_text.selection_end_col = col;
+		UI.main_text.selection_end_row = row;
+
+		textbox_draw( &UI.chat_text );
+	}
+}
+
+static void event_message( XEvent * xevent ) {
+	if( ( Atom ) xevent->xclient.data.l[ 0 ] == wmDeleteWindow ) {
 		script_handleClose();
 	}
 }
 
-static void eventResize( XEvent * event ) {
+static void event_resize( XEvent * xevent ) {
 	int old_width = UI.width;
 	int old_height = UI.height;
 
-	UI.width = event->xconfigure.width;
-	UI.height = event->xconfigure.height;
+	UI.width = xevent->xconfigure.width;
+	UI.height = xevent->xconfigure.height;
 
 	if( UI.width == old_width && UI.height == old_height )
 		return;
@@ -412,26 +496,26 @@ static void eventResize( XEvent * event ) {
 	);
 }
 
-static void eventExpose( XEvent * event ) {
+static void event_expose( XEvent * xevent ) {
 	ui_draw();
 }
 
-static void eventKeyPress( XEvent * event ) {
+static void event_key_press( XEvent * xevent ) {
 	#define ADD_MACRO( key, name ) \
 		case key: \
 			script_doMacro( name, sizeof( name ) - 1, shift, ctrl, alt ); \
 			break
 
-	XKeyEvent * keyEvent = &event->xkey;
+	XKeyEvent * event = &xevent->xkey;
 
 	char keyBuffer[ 32 ];
 	KeySym key;
 
-	bool shift = keyEvent->state & ShiftMask;
-	bool ctrl = keyEvent->state & ControlMask;
-	bool alt = keyEvent->state & Mod1Mask;
+	bool shift = event->state & ShiftMask;
+	bool ctrl = event->state & ControlMask;
+	bool alt = event->state & Mod1Mask;
 
-	int len = XLookupString( keyEvent, keyBuffer, sizeof( keyBuffer ), &key, NULL );
+	int len = XLookupString( event, keyBuffer, sizeof( keyBuffer ), &key, NULL );
 
 	switch( key ) {
 		case XK_Return:
@@ -549,11 +633,11 @@ static void eventKeyPress( XEvent * event ) {
 	#undef ADD_MACRO
 }
 
-static void eventFocusOut( XEvent * event ) {
+static void event_defocus( XEvent * xevent ) {
 	UI.has_focus = false;
 }
 
-static void eventFocusIn( XEvent * event ) {
+static void event_focus( XEvent * xevent ) {
 	UI.has_focus = true;
 
 	XWMHints * hints = XGetWMHints( UI.display, UI.window );
@@ -564,18 +648,20 @@ static void eventFocusIn( XEvent * event ) {
 
 void ui_handleXEvents() {
 	void ( *event_handlers[ LASTEvent ] )( XEvent * ) = { };
-	event_handlers[ ButtonPress ] = eventButtonPress;
-	event_handlers[ ButtonRelease ] = eventButtonRelease;
-	event_handlers[ ClientMessage ] = eventMessage;
-	event_handlers[ ConfigureNotify ] = eventResize;
-	event_handlers[ Expose ] = eventExpose;
-	event_handlers[ KeyPress ] = eventKeyPress;
-	event_handlers[ FocusOut ] = eventFocusOut;
-	event_handlers[ FocusIn ] = eventFocusIn;
+	event_handlers[ ButtonPress ] = event_mouse_down;
+	event_handlers[ ButtonRelease ] = event_mouse_up;
+	event_handlers[ MotionNotify ] = event_mouse_move;
+	event_handlers[ ClientMessage ] = event_message;
+	event_handlers[ ConfigureNotify ] = event_resize;
+	event_handlers[ Expose ] = event_expose;
+	event_handlers[ KeyPress ] = event_key_press;
+	event_handlers[ FocusOut ] = event_defocus;
+	event_handlers[ FocusIn ] = event_focus;
 
 	const char * event_names[ LASTEvent ] = { };
 	event_names[ ButtonPress ] = "ButtonPress";
 	event_names[ ButtonRelease ] = "ButtonRelease";
+	event_names[ MotionNotify ] = "MotionNotify";
 	event_names[ ClientMessage ] = "ClientMessage";
 	event_names[ ConfigureNotify ] = "ConfigureNotify";
 	event_names[ Expose ] = "Expose";
@@ -587,8 +673,10 @@ void ui_handleXEvents() {
 		XEvent event;
 		XNextEvent( UI.display, &event );
 
-		if( event_handlers[ event.type ] != NULL )
+		if( event_handlers[ event.type ] != NULL ) {
+			// printf( "%s\n", event_names[ event.type ] );
 			event_handlers[ event.type ]( &event );
+		}
 	}
 
 	// if( UI.dirty ) {
@@ -669,8 +757,8 @@ void ui_init() {
 	initStyle();
 
 	XSetWindowAttributes attr = { };
-	attr.event_mask = ExposureMask | StructureNotifyMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask | FocusChangeMask,
-	attr.colormap = UI.colorMap,
+	attr.event_mask = ExposureMask | StructureNotifyMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | FocusChangeMask;
+	attr.colormap = UI.colorMap;
 
 	UI.window = XCreateWindow( UI.display, root, 0, 0, 800, 600, 0, UI.depth, InputOutput, visual, CWBackPixel | CWEventMask | CWColormap, &attr );
 	UI.gc = XCreateGC( UI.display, UI.window, 0, NULL );

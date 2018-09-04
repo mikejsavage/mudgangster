@@ -24,6 +24,10 @@ struct TextBox {
 	int x, y;
 	int w, h;
 	size_t scroll_offset;
+
+	bool selecting;
+	int selection_start_col, selection_start_row;
+	int selection_end_col, selection_end_row;
 };
 
 void textbox_init( TextBox * tb, size_t scrollback );

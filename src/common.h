@@ -22,6 +22,13 @@ constexpr T max( T a, T b ) {
 	return a > b ? a : b;
 }
 
+template< typename T >
+void swap( T & a, T & b ) {
+        T t = a;
+        a = b;
+        b = t;
+}
+
 template< typename To, typename From >
 inline To checked_cast( const From & from ) {
 	To result = To( from );

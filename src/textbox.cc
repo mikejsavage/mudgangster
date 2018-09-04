@@ -99,6 +99,37 @@ void textbox_set_size( TextBox * tb, int w, int h ) {
 	tb->h = h;
 }
 
+static bool inside_selection( int col, int row, int start_col, int start_row, int end_col, int end_row ) {
+	int min_col = min( start_col, end_col );
+	int min_row = min( start_row, end_row );
+	int max_col = max( start_col, end_col );
+	int max_row = max( start_row, end_row );
+
+	if( row < min_row || row > max_row )
+		return false;
+
+	if( start_row == end_row )
+		return col >= min_col && col <= max_col;
+
+	if( row > min_row && row < max_row )
+		return true;
+
+	if( start_row < end_row ) {
+		if( row == start_row )
+			return col <= start_col;
+		if( row == end_row )
+			return col >= end_col;
+	}
+	else {
+		if( row == start_row )
+			return col >= start_col;
+		if( row == end_row )
+			return col <= end_col;
+	}
+
+	return false;
+}
+
 void textbox_draw( const TextBox * tb ) {
 	if( tb->w == 0 || tb->h == 0 )
 		return;
@@ -119,6 +150,9 @@ void textbox_draw( const TextBox * tb ) {
 	size_t tb_rows = num_rows( tb->h );
 	size_t tb_cols = tb->w / fw;
 
+	int top_spacing = SPACING / 2;
+	int bot_spacing = SPACING - top_spacing;
+
 	while( rows_drawn < tb_rows && lines_drawn + tb->scroll_offset < tb->num_lines ) {
 		const TextBox::Line & line = tb->lines[ ( tb->head + tb->num_lines - tb->scroll_offset - lines_drawn ) % tb->max_lines ];
 
@@ -130,8 +164,9 @@ void textbox_draw( const TextBox * tb ) {
 			const TextBox::Glyph & glyph = line.glyphs[ i ];
 
 			size_t row = i / tb_cols;
+			size_t col = i % tb_cols;
 
-			int left = ( i % tb_cols ) * fw;
+			int left = col * fw;
 			int top = tb->h - ( rows_drawn + line_rows - row ) * ( fh + SPACING );
 			if( top < 0 )
 				continue;
@@ -139,14 +174,21 @@ void textbox_draw( const TextBox * tb ) {
 			int fg, bg, bold;
 			unpack_style( glyph.style, &fg, &bg, &bold );
 
+			bool bold_fg = bold;
+			bool bold_bg = false;
+			if( tb->selecting ) {
+				if( inside_selection( col, rows_drawn + line_rows - row - 1, tb->selection_start_col, tb->selection_start_row, tb->selection_end_col, tb->selection_end_row ) ) {
+					swap( fg, bg );
+					swap( bold_fg, bold_bg );
+				}
+			}
+
 			// bg
 			// TODO: top/bottom spacing seems to be inconsistent here, try with large spacing
-			int top_spacing = SPACING / 2;
-			int bot_spacing = SPACING - top_spacing;
-			ui_fill_rect( tb->x + left, tb->y + top - top_spacing, fw, fh + bot_spacing, Colour( bg ), false );
+			ui_fill_rect( tb->x + left, tb->y + top - top_spacing, fw, fh + bot_spacing, Colour( bg ), bold_bg );
 
 			// fg
-			ui_draw_char( tb->x + left, tb->y + top, glyph.ch, Colour( fg ), bold );
+			ui_draw_char( tb->x + left, tb->y + top, glyph.ch, Colour( fg ), bold_fg, bold );
 		}
 
 		lines_drawn++;

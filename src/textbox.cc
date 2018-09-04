@@ -54,6 +54,8 @@ void textbox_add( TextBox * tb, const char * str, size_t len, Colour fg, Colour 
 void textbox_newline( TextBox * tb ) {
 	if( tb->num_lines < tb->max_lines ) {
 		tb->num_lines++;
+		if( tb->scroll_offset > 0 )
+			tb->scroll_offset++;
 		return;
 	}
 

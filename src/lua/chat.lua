@@ -1,5 +1,3 @@
-local loop = ev.Loop.default
-
 local handleChat
 
 local CommandBytes = {
@@ -61,11 +59,9 @@ end
 
 local Client = { }
 
-function Client:new( socket, address, port )
-	socket:setoption( "keepalive", true )
-
+function Client:new( sock, address, port )
 	local client = {
-		socket = socket,
+		socket = sock,
 
 		address = address,
 		port = port,
@@ -80,7 +76,7 @@ function Client:new( socket, address, port )
 
 	table.insert( Clients, client )
 
-	socket:send( "CHAT:Hirve\n127.0.0.14050 " )
+	socket.send( sock, "CHAT:Hirve\n127.0.0.14050 " )
 
 	return client
 end
@@ -93,7 +89,7 @@ function Client:kill()
 	mud.print( "\n#s> Disconnected from %s!", self.name )
 
 	self.state = "killed"
-	self.socket:shutdown()
+	socket.close( self.socket )
 
 	for i, client in ipairs( Clients ) do
 		if client == self then
@@ -123,7 +119,7 @@ function mud.chatns( form, ... )
 
 	for _, client in ipairs( Clients ) do
 		if client.state == "connected" then
-			client.socket:send( data )
+			socket.send( client.socket, data )
 		end
 	end
 
@@ -138,31 +134,22 @@ end
 local function call( address, port )
 	mud.print( "\n#s> Calling %s:%d...", address, port )
 
-	local sock = socket.tcp()
-	sock:settimeout( 0 )
-
-	sock:connect( address, port )
-
-	ev.IO.new( function( loop, watcher )
-		local _, err = sock:receive( "*a" )
-
-		if err ~= "connection refused" then
-			local client = Client:new( sock, address, port )
-
-			ev.IO.new( function( loop, watcher )
-				dataHandler( client, loop, watcher )
-			end, sock:getfd(), ev.READ ):start( loop )
-
-			ev.IO.new( function( loop, watcher )
-				client.socket:send( CommandBytes.version .. "MudGangster" .. "\255" )
-				watcher:stop( loop )
-			end, sock:getfd(), ev.WRITE ):start( loop )
+	local client
+	local sock, err = socket.connect( address, port, function( sock, data )
+		if data then
+			assert( coroutine.resume( client.handler, data ) )
 		else
-			mud.print( "\n#s> Failed to call %s:%d", address, port )
+			client:kill()
 		end
+	end )
 
-		watcher:stop( loop )
-	end, sock:getfd(), ev.WRITE ):start( loop )
+	if not sock then
+		mud.print( "\n#s> Connection failed: %s", err )
+		return
+	end
+
+	client = Client:new( sock, address, port )
+	socket.send( client.socket, CommandBytes.version .. "MudGangster" .. "\255" )
 end
 
 mud.alias( "/call", {
@@ -187,7 +174,7 @@ local function sendPM( client, message )
 	local named = "\nHirve chats to you, '" .. message .. "'"
 	local data = CommandBytes.pm .. named .. "\n\255"
 
-	client.socket:send( data )
+	socket.send( client.socket, data )
 end
 
 mud.alias( "/silentpm", {

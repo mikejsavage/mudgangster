@@ -1,4 +1,5 @@
 #include <err.h>
+#include <poll.h>
 
 #include <X11/Xutil.h>
 #include <X11/XKBlib.h>
@@ -9,6 +10,69 @@
 #include "input.h"
 #include "script.h"
 #include "textbox.h"
+
+#include "platform_network.h"
+
+struct Socket {
+	TCPSocket sock;
+	bool in_use;
+};
+
+static Socket sockets[ 128 ];
+
+static bool closing = false;
+
+void * platform_connect( const char ** err, const char * host, int port ) {
+	size_t idx;
+	{
+		bool ok = false;
+		for( size_t i = 0; i < ARRAY_COUNT( sockets ); i++ ) {
+			if( !sockets[ i ].in_use ) {
+				idx = i;
+				ok = true;
+				break;
+			}
+		}
+
+		if( !ok ) {
+			*err = "too many connections";
+			return NULL;
+		}
+	}
+
+	NetAddress addr;
+	{
+		bool ok = dns_first( host, &addr );
+		if( !ok ) {
+			*err = "couldn't resolve hostname"; // TODO: error from dns_first
+			return NULL;
+		}
+	}
+	addr.port = checked_cast< u16 >( port );
+
+	TCPSocket sock;
+	bool ok = net_new_tcp( &sock, addr, NET_BLOCKING );
+	if( !ok ) {
+		*err = "net_new_tcp";
+		return NULL;
+	}
+
+	sockets[ idx ].sock = sock;
+	sockets[ idx ].in_use = true;
+
+	return &sockets[ idx ];
+}
+
+void platform_send( void * vsock, const char * data, size_t len ) {
+	Socket * sock = ( Socket * ) vsock;
+	net_send( sock->sock, data, len );
+}
+
+void platform_close( void * vsock ) {
+	Socket * sock = ( Socket * ) vsock;
+	net_destroy( &sock->sock );
+	sock->in_use = false;
+}
 
 struct {
 	Display * display;
@@ -461,6 +525,7 @@ static void event_mouse_move( XEvent * xevent ) {
 static void event_message( XEvent * xevent ) {
 	if( ( Atom ) xevent->xclient.data.l[ 0 ] == wmDeleteWindow ) {
 		script_handleClose();
+		closing = true;
 	}
 }
 
@@ -736,6 +801,10 @@ static void initStyle() {
 }
 
 void ui_init() {
+	for( Socket & s : sockets ) {
+		s.in_use = false;
+	}
+
 	UI = { };
 
 	textbox_init( &UI.main_text, SCROLLBACK_SIZE );
@@ -830,4 +899,65 @@ void ui_term() {
 	XFreeGC( UI.display, UI.gc );
 	XDestroyWindow( UI.display, UI.window );
 	XCloseDisplay( UI.display );
+}
+
+static Socket * socket_from_fd( int fd ) {
+	for( Socket & sock : sockets ) {
+		if( sock.in_use && sock.sock.fd == fd ) {
+			return &sock;
+		}
+	}
+
+	return NULL;
+}
+
+void event_loop() {
+	while( !closing ) {
+		pollfd fds[ ARRAY_COUNT( sockets ) + 1 ] = { };
+		nfds_t num_fds = 1;
+
+		fds[ 0 ].fd = ConnectionNumber( UI.display );
+		fds[ 0 ].events = POLLIN;
+
+		for( Socket sock : sockets ) {
+			if( sock.in_use ) {
+				fds[ num_fds ].fd = sock.sock.fd;
+				fds[ num_fds ].events = POLLIN;
+				num_fds++;
+			}
+		}
+
+		int ok = poll( fds, num_fds, 500 );
+		if( ok == -1 )
+			FATAL( "poll" );
+
+		if( ok == 0 ) {
+			script_fire_intervals();
+			continue;
+		}
+
+		for( size_t i = 1; i < ARRAY_COUNT( fds ); i++ ) {
+			if( fds[ i ].revents & POLLIN ) {
+				Socket * sock = socket_from_fd( fds[ i ].fd );
+				assert( sock != NULL );
+
+				char buf[ 8192 ];
+				size_t n;
+				TCPRecvResult res = net_recv( sock->sock, buf, sizeof( buf ), &n );
+				if( res == TCP_OK ) {
+					script_socketData( sock, buf, n );
+				}
+				else if( res == TCP_CLOSED ) {
+					script_socketData( sock, NULL, 0 );
+				}
+				else {
+					FATAL( "net_recv" );
+				}
+			}
+		}
+
+		if( fds[ 0 ].events & POLLIN ) {
+			ui_handleXEvents();
+		}
+	}
 }

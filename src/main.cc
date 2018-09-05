@@ -7,7 +7,7 @@ int main() {
 	input_init();
 	script_init();
 
-	// main loop is done in lua
+	event_loop();
 
 	script_term();
 	input_term();

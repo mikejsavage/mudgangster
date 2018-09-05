@@ -1,7 +1,7 @@
 all: debug
 .PHONY: debug asan release clean
 
-build/lua_bytecode.h: src/lua/action.lua src/lua/alias.lua src/lua/chat.lua src/lua/connect.lua src/lua/event.lua src/lua/gag.lua src/lua/handlers.lua src/lua/intercept.lua src/lua/interval.lua src/lua/macro.lua src/lua/main.lua src/lua/script.lua src/lua/serialize.lua src/lua/status.lua src/lua/sub.lua src/lua/utils.lua
+build/lua_bytecode.h: src/lua/action.lua src/lua/alias.lua src/lua/chat.lua src/lua/mud.lua src/lua/event.lua src/lua/gag.lua src/lua/handlers.lua src/lua/intercept.lua src/lua/interval.lua src/lua/macro.lua src/lua/main.lua src/lua/script.lua src/lua/serialize.lua src/lua/status.lua src/lua/sub.lua src/lua/utils.lua src/lua/socket.lua
 	@printf "\033[1;33mbuilding $@\033[0m\n"
 	@scripts/pack_lua.sh
 

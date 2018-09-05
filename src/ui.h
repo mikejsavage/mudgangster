@@ -39,13 +39,17 @@ void ui_chat_print( const char * str, size_t len, Colour fg, Colour bg, bool bol
 
 void ui_fill_rect( int left, int top, int width, int height, Colour colour, bool bold );
 void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool bold_font = false );
-void ui_dirty( int left, int top, int right, int bottom ); // TODO: x/y + w/h?
+void ui_dirty( int left, int top, int width, int height );
 
 void ui_get_font_size( int * fw, int * fh );
 
 void ui_urgent();
 
-int ui_display_fd(); // TODO: very x11 specific!
-
 void ui_init();
 void ui_term();
+
+void * platform_connect( const char ** err, const char * host, int port );
+void platform_send( void * sock, const char * data, size_t len );
+void platform_close( void * sock );
+
+void event_loop();

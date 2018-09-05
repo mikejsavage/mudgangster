@@ -254,6 +254,7 @@ local function handleCommand( input, hide )
 			end
 		end
 
+		print( mud.send )
 		mud.send( input .. "\n" )
 		mud.drawMain()
 	end 
@@ -284,8 +285,6 @@ local function handleMacro( key, shift, ctrl, alt )
 end
 
 local function handleClose()
-	ev.Loop.default:unloop()
-
 	mud.event( "shutdown" )
 end
 
@@ -295,5 +294,6 @@ return {
 	input = handleInput,
 	macro = handleMacro,
 	interval = interval.doIntervals,
+	socket = handleSocketData,
 	close = handleClose,
 }

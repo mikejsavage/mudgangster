@@ -5,5 +5,5 @@ require( "scripts.gen_makefile" )
 -- require( "libs.lua" )
 -- require( "libs.lpeg" )
 
-bin( "mudgangster", { "src/main", "src/script", "src/textbox", "src/input", "src/x11" } )
+bin( "mudgangster", { "src/main", "src/script", "src/textbox", "src/input", "src/x11", "src/platform_network" } )
 gcc_bin_ldflags( "mudgangster", "-lm -lX11 -llua" ) -- -Wl,-E" ) need to export symbols when vendoring

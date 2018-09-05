@@ -1,7 +1,7 @@
 local Intervals = { }
 
-local function doIntervals( loop, watcher )
-	local now = loop:update_now()
+local function doIntervals()
+	local now = mud.now()
 
 	for i = 1, #Intervals do
 		local event = Intervals[ i ]
@@ -10,10 +10,6 @@ local function doIntervals( loop, watcher )
 			event:checkTick( now )
 		end
 	end
-end
-
-function mud.now()
-	return ev.Loop.default:update_now()
 end
 
 function mud.interval( callback, interval, disabled )

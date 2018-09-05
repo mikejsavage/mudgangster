@@ -40,7 +40,7 @@ function mud.connect( address, port )
 		if data then
 			DataHandler( data )
 		else
-			mud.kill()
+			mud.disconnect()
 		end
 	end )
 
@@ -48,6 +48,8 @@ function mud.connect( address, port )
 		mud.print( "\n#s> Connection failed: %s", err )
 		return
 	end
+
+	mud_socket = sock
 
 	LastAddress = address
 	LastPort = port

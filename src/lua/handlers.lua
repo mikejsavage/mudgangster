@@ -254,7 +254,6 @@ local function handleCommand( input, hide )
 			end
 		end
 
-		print( mud.send )
 		mud.send( input .. "\n" )
 		mud.drawMain()
 	end 

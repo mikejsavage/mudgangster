@@ -1,4 +1,10 @@
-mudgangster
 build
 release
 gen.mk
+
+mudgangster
+*.exe
+*.exp
+*.ilk
+*.lib
+*.pdb

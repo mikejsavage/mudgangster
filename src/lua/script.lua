@@ -2,6 +2,7 @@ local lfs = require( "lfs" )
 local serialize = require( "serialize" )
 
 local ScriptsDir = os.getenv( "HOME" ) .. "/.mudgangster/scripts"
+local ScriptsDir = os.getenv( "APPDATA" ) .. "\\Mud Gangster\\scripts"
 
 package.path = package.path .. ";" .. ScriptsDir .. "/?.lua"
 

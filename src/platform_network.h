@@ -1,6 +1,7 @@
 #pragma once
 
 #include "platform.h"
+#include "common.h"
 
 #if PLATFORM_WINDOWS
 typedef s64 OSSocket;

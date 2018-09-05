@@ -4,7 +4,11 @@
 
 #include "platform_time.h"
 
+#if PLATFORM_WINDOWS
+#include "libs/lua/lua.hpp"
+#else
 #include <lua.hpp>
+#endif
 
 #if LUA_VERSION_NUM < 502
 #define luaL_len lua_objlen
@@ -235,6 +239,7 @@ extern "C" int mud_now( lua_State * L ) {
 
 #if PLATFORM_WINDOWS
 extern "C" int luaopen_lpeg( lua_State * L );
+extern "C" int luaopen_lfs( lua_State * L );
 #endif
 
 void script_init() {
@@ -246,13 +251,16 @@ void script_init() {
 #if PLATFORM_WINDOWS
 	luaL_requiref( lua, "lpeg", luaopen_lpeg, 0 );
 	lua_pop( lua, 1 );
+
+	luaL_requiref( lua, "lfs", luaopen_lfs, 0 );
+	lua_pop( lua, 1 );
 #endif
 
 	lua_getglobal( lua, "debug" );
 	lua_getfield( lua, -1, "traceback" );
 	lua_remove( lua, -2 );
 
-	if( luaL_loadbufferx( lua, ( const char * ) lua_bytecode, sizeof( lua_bytecode ), "main", "b" ) != LUA_OK ) {
+	if( luaL_loadbufferx( lua, ( const char * ) lua_bytecode, sizeof( lua_bytecode ), "main", "t" ) != LUA_OK ) {
 		printf( "Error reading main.lua: %s\n", lua_tostring( lua, -1 ) );
 		exit( 1 );
 	}

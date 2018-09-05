@@ -41,15 +41,17 @@ function math.avg( a, b )
 end
 
 function io.readable( path )
-	local file, err = io.open( path, "r" )
-
-	if not file then
-		return false, err
-	end
-
-	io.close( file )
-
+	-- TODO: this gives a no permissions error on windows
 	return true
+	-- local file, err = io.open( path, "r" )
+        --
+	-- if not file then
+	-- 	return false, err
+	-- end
+        --
+	-- io.close( file )
+        --
+	-- return true
 end
 
 function enforce( var, name, ... )

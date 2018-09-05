@@ -14,7 +14,7 @@ local configs = {
 
 		toolchain = "msvc",
 
-		cxxflags = "/I src /c /Oi /Gm- /GR- /EHa- /EHsc /nologo /DNOMINMAX /DWIN32_LEAN_AND_MEAN",
+		cxxflags = "/I . /I src /c /Oi /Gm- /GR- /EHa- /EHsc /nologo /DNOMINMAX /DWIN32_LEAN_AND_MEAN",
 		ldflags = "user32.lib shell32.lib advapi32.lib dbghelp.lib /nologo",
 		warnings = "/W4 /wd4100 /wd4146 /wd4189 /wd4201 /wd4324 /wd4351 /wd4127 /wd4505 /wd4530 /wd4702 /D_CRT_SECURE_NO_WARNINGS",
 	},

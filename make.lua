@@ -5,5 +5,5 @@ require( "scripts.gen_makefile" )
 -- require( "libs.lua" )
 -- require( "libs.lpeg" )
 
-bin( "mudGangster", { "src/main", "src/script", "src/textbox", "src/input", "src/x11" } )
-gcc_bin_ldflags( "mudGangster", "-lm -lX11 -llua" ) -- -Wl,-E" ) need to export symbols when vendoring
+bin( "mudgangster", { "src/main", "src/script", "src/textbox", "src/input", "src/x11" } )
+gcc_bin_ldflags( "mudgangster", "-lm -lX11 -llua" ) -- -Wl,-E" ) need to export symbols when vendoring

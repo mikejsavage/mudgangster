@@ -533,6 +533,7 @@ static void event_resize( XEvent * xevent ) {
 
 	int old_max_width = UI.max_width;
 	int old_max_height = UI.max_height;
+
 	UI.max_width = max( UI.max_width, UI.width );
 	UI.max_height = max( UI.max_height, UI.height );
 

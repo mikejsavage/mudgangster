@@ -257,7 +257,7 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool bol
 
 	if( uint8_t( c ) == 187 ) { // double top right
 		ui_fill_rect( left, top + top_spacing - 1, right_spacing + 1, 1, colour, bold );
-		ui_fill_rect( left + left_spacing + 1, top + top_spacing, 1, bot_spacing + 1, colour, bold );
+		ui_fill_rect( left + left_spacing + 1, top + top_spacing - 1, 1, bot_spacing + 1, colour, bold );
 		ui_fill_rect( left, top + top_spacing + 1, right_spacing - 1, 1, colour, bold );
 		ui_fill_rect( left + left_spacing - 1, top + top_spacing + 1, 1, bot_spacing - 1, colour, bold );
 		return;

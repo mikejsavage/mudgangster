@@ -35,3 +35,4 @@ lib( "lua", {
 } )
 -- obj_replace_cxxflags( "libs/lua/%", "-c -O2 -x c -DLUA_COMPAT_5_2 -DLUA_USE_LINUX" )
 obj_cxxflags( "libs/lua/%", "/c /TC /DLUA_COMPAT_5_2" )
+obj_cxxflags( "libs/lua/%", "/wd4244 /wd4310" )

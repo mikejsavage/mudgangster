@@ -574,6 +574,10 @@ static void event_key_press( XEvent * xevent ) {
 
 	int len = XLookupString( event, keyBuffer, sizeof( keyBuffer ), &key, NULL );
 
+	event->state &= ~ShiftMask;
+	char noShiftKeyBuffer[ 32 ];
+	int noShiftLen = XLookupString( event, noShiftKeyBuffer, sizeof( noShiftKeyBuffer ), NULL, NULL );
+
 	switch( key ) {
 		case XK_Return:
 			input_return();
@@ -677,7 +681,7 @@ static void event_key_press( XEvent * xevent ) {
 
 		default:
 			if( ctrl || alt ) {
-				script_doMacro( keyBuffer, len, shift, ctrl, alt );
+				script_doMacro( noShiftKeyBuffer, noShiftLen, shift, ctrl, alt );
 			}
 			else if( len > 0 ) {
 				input_add( keyBuffer, len );

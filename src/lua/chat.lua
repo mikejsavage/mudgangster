@@ -1,6 +1,8 @@
 local handleChat
+local chat_name = "FromDaHood"
 
 local CommandBytes = {
+	name_change = "\1",
 	all = "\4",
 	pm = "\5",
 	message = "\7",
@@ -76,7 +78,7 @@ function Client:new( sock, address, port )
 
 	table.insert( Clients, client )
 
-	socket.send( sock, "CHAT:Hirve\n127.0.0.14050 " )
+	socket.send( sock, "CHAT:%s\n127.0.0.14050 " % chat_name )
 
 	return client
 end
@@ -112,8 +114,8 @@ local function dataHandler( client, loop, watcher )
 	assert( coroutine.resume( client.handler, data ) )
 end
 
-function mud.chatns( form, ... )
-	local named = "\nHirve" .. form:format( ... )
+function mud.chat_no_space( form, ... )
+	local named = "\n" .. chat_name .. form:format( ... )
 	local data = CommandBytes.all .. named:parseColours() .. "\n\255"
 
 	for _, client in ipairs( Clients ) do
@@ -123,7 +125,6 @@ function mud.chatns( form, ... )
 	end
 
 	mud.printb( "#lr%s", named )
-	handleChat()
 end
 
 function mud.chat( form, ... )
@@ -162,7 +163,6 @@ mud.alias( "/call", {
 mud.alias( "/hang", {
 	[ "^(%S+)$" ] = function( name )
 		local client = clientFromName( name )
-
 		if client then
 			client:kill()
 		end
@@ -182,7 +182,6 @@ mud.alias( "/silentpm", {
 
 		if client then
 			local coloured = message:parseColours()
-
 			sendPM( client, coloured )
 		end
 	end,
@@ -194,17 +193,26 @@ mud.alias( "/pm", {
 
 		if client then
 			local coloured = message:parseColours()
-
 			sendPM( client, coloured )
-
-			local toPrint = ( "You chat to %s, '" % client.name ) .. coloured .. "'"
-
-			handleChat( toPrint )
+			mud.printb( "\n#lrYou chat to %s, \"%s\"", client.name, coloured )
 		end
 	end,
 } )
 
 mud.alias( "/emoteto", function( args )
+end )
+
+mud.alias( "/chatname", function( name )
+	chat_name = name
+
+	local message = CommandBytes.name_change .. chat_name .. "\255"
+	for _, client in ipairs( Clients ) do
+		if client.state == "connected" then
+			socket.send( client.socket, message )
+		end
+	end
+
+	mud.print( "\n#s> Chat name changed to %s", chat_name )
 end )
 
 return {

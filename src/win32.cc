@@ -16,10 +16,14 @@ struct {
 	HWND hwnd;
 	HDC hdc;
 
+	HDC back_buffer;
+	HBITMAP back_buffer_bitmap;
+
 	TextBox main_text;
 	TextBox chat_text;
 
 	int width, height;
+	int max_width, max_height;
 
 	bool has_focus;
 } UI;
@@ -151,11 +155,17 @@ static COLORREF get_colour( Colour colour, bool bold ) {
 	return Style.colours[ bold ][ colour ];
 }
 
+static void make_dirty( int left, int top, int width, int height ) {
+	RECT r = { left, top, left + width, top + height };
+	InvalidateRect( UI.hwnd, &r, FALSE );
+}
+
 void ui_fill_rect( int left, int top, int width, int height, Colour colour, bool bold ) {
 	HBRUSH brush = CreateSolidBrush( get_colour( colour, bold ) );
 	RECT r = { left, top, left + width, top + height };
-	FillRect( UI.hdc, &r, brush );
+	FillRect( UI.back_buffer, &r, brush );
 	DeleteObject( brush );
+	make_dirty( left, top, width, height );
 }
 
 void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool force_bold_font ) {
@@ -312,9 +322,11 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool for
 		return;
 	}
 
-	SelectObject( UI.hdc, ( bold || force_bold_font ? Style.bold_font : Style.font ).font );
-	SetTextColor( UI.hdc, get_colour( colour, bold ) );
-	TextOutA( UI.hdc, left, top + SPACING, &c, 1 );
+	SelectObject( UI.back_buffer, ( bold || force_bold_font ? Style.bold_font : Style.font ).font );
+	SetTextColor( UI.back_buffer, get_colour( colour, bold ) );
+	TextOutA( UI.back_buffer, left, top + SPACING, &c, 1 );
+
+	make_dirty( left, top, Style.font.width, Style.font.height + SPACING );
 }
 
 typedef struct {
@@ -427,7 +439,9 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 	switch( msg ) {
 		case WM_CREATE: {
 			UI.hdc = GetDC( hwnd );
-			SetBkMode( UI.hdc, TRANSPARENT );
+			UI.back_buffer = CreateCompatibleDC( UI.hdc );
+
+			SetBkMode( UI.back_buffer, TRANSPARENT );
 
 			Style.font.font = CreateFont( 14, 0, 0, 0, FW_REGULAR,
 				FALSE, FALSE, FALSE, DEFAULT_CHARSET,
@@ -481,6 +495,20 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 			if( UI.width == old_width && UI.height == old_height )
 				break;
 
+			int old_max_width = UI.max_width;
+			int old_max_height = UI.max_height;
+
+			UI.max_width = max( UI.max_width, UI.width );
+			UI.max_height = max( UI.max_height, UI.height );
+
+			if( UI.max_width != old_max_width || UI.max_height != old_max_height ) {
+				if( old_width != -1 ) {
+					DeleteObject( UI.back_buffer_bitmap );
+				}
+				UI.back_buffer_bitmap = CreateCompatibleBitmap( UI.hdc, UI.max_width, UI.max_height );
+				SelectObject( UI.back_buffer, UI.back_buffer_bitmap );
+			}
+
 			textbox_set_pos( &UI.chat_text, PADDING, PADDING );
 			textbox_set_size( &UI.chat_text, UI.width - ( 2 * PADDING ), ( Style.font.height + SPACING ) * CHAT_ROWS );
 
@@ -492,6 +520,18 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 
 			ui_draw();
 		} break;
+
+		case WM_PAINT: {
+			RECT r;
+			GetUpdateRect( UI.hwnd, &r, FALSE );
+			PAINTSTRUCT ps;
+			HDC hdc = BeginPaint( UI.hwnd, &ps );
+			BitBlt( UI.hdc, r.left, r.top, r.right - r.left, r.bottom - r.top, UI.back_buffer, r.left, r.top, SRCCOPY );
+			EndPaint( UI.hwnd, &ps );
+		} break;
+
+		case WM_ERASEBKGND:
+			return TRUE;
 
 		case WM_LBUTTONDOWN: {
 			// char szFileName[MAX_PATH];
@@ -522,10 +562,10 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 		} break;
 
 		case WM_CHAR: {
-			if( wParam >= ' ' && wParam < 128 ) {
+			if( wParam >= ' ' && wParam < 127 ) {
 				char c = wParam;
 				input_add( &c, 1 );
-				ui_draw();
+				draw_input();
 			}
 		} break;
 
@@ -543,37 +583,37 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 			switch( wParam ) {
 				case VK_BACK:
 					input_backspace();
-					ui_draw();
+					draw_input();
 					break;
 
 				case VK_DELETE:
 					input_delete();
-					ui_draw();
+					draw_input();
 					break;
 
 				case VK_RETURN:
 					input_return();
-					ui_draw();
+					draw_input();
 					break;
 
 				case VK_LEFT:
 					input_left();
-					ui_draw();
+					draw_input();
 					break;
 
 				case VK_RIGHT:
 					input_right();
-					ui_draw();
+					draw_input();
 					break;
 
 				case VK_UP:
 					input_up();
-					ui_draw();
+					draw_input();
 					break;
 
 				case VK_DOWN:
 					input_down();
-					ui_draw();
+					draw_input();
 					break;
 
 				case VK_PRIOR:

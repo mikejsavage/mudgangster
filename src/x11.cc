@@ -599,6 +599,7 @@ static void event_key_press( XEvent * xevent ) {
 				textbox_scroll( &UI.main_text, 1 );
 			else
 				textbox_page_up( &UI.main_text );
+			textbox_draw( &UI.main_text );
 			break;
 
 		case XK_Page_Down:
@@ -606,6 +607,7 @@ static void event_key_press( XEvent * xevent ) {
 				textbox_scroll( &UI.main_text, -1 );
 			else
 				textbox_page_down( &UI.main_text );
+			textbox_draw( &UI.main_text );
 			break;
 
 		case XK_Up:

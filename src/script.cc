@@ -14,8 +14,8 @@
 #define luaL_len lua_objlen
 #endif
 
-static const uint8_t lua_bytecode[] = {
-#include "../build/lua_bytecode.h"
+static const uint8_t lua_combined[] = {
+#include "../build/lua_combined.h"
 };
 
 static lua_State * lua;
@@ -253,7 +253,7 @@ void script_init() {
 	lua_getfield( lua, -1, "traceback" );
 	lua_remove( lua, -2 );
 
-	if( luaL_loadbufferx( lua, ( const char * ) lua_bytecode, sizeof( lua_bytecode ), "main", "t" ) != LUA_OK ) {
+	if( luaL_loadbufferx( lua, ( const char * ) lua_combined, sizeof( lua_combined ), "main", "t" ) != LUA_OK ) {
 		printf( "Error reading main.lua: %s\n", lua_tostring( lua, -1 ) );
 		exit( 1 );
 	}

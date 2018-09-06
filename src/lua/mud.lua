@@ -5,7 +5,7 @@ local LastAddress
 local LastPort
 
 function mud.send( data )
-	mud.lastInput = mud.now()
+	mud.last_command_time = mud.now()
 	socket.send( mud_socket, data )
 end
 
@@ -55,7 +55,7 @@ function mud.connect( address, port )
 	LastPort = port
 
 	mud.connected = true
-	mud.lastInput = mud.now()
+	mud.last_command_time = mud.now()
 end
 
 mud.alias( "/con", {

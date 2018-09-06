@@ -40,6 +40,8 @@ mud.drawChat = drawChat
 mud.urgent = urgent
 mud.now = get_time
 
+mud.last_human_input_time = mud.now()
+
 mud.alias( "/font", {
 	[ "^(.-)%s+(%d+)$" ] = function( name, size )
 		size = tonumber( size )

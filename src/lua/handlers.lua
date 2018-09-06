@@ -260,6 +260,8 @@ local function handleCommand( input, hide )
 end
 
 local function handleInput( input, display )
+	mud.last_human_input_time = mud.now()
+
 	for command in ( input .. ";" ):gmatch( "([^;]*);" ) do
 		handleCommand( command, display )
 	end
@@ -268,6 +270,8 @@ end
 mud.input = handleInput
 
 local function handleMacro( key, shift, ctrl, alt )
+	mud.last_human_input_time = mud.now()
+
 	if shift then
 		key = "s" .. key
 	end

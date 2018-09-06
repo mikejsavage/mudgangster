@@ -45,6 +45,9 @@ void script_handleInput( const char * buffer, int len ) {
 }
 
 void script_doMacro( const char * key, int len, bool shift, bool ctrl, bool alt ) {
+	// printf( "macro %s%s%s%.*s\n", shift ? "s" : "", ctrl ? "c" : "", alt ? "a" : "", len, key );
+	// fflush( stdout );
+
 	assert( macroHandlerIdx != LUA_NOREF );
 
 	lua_rawgeti( lua, LUA_REGISTRYINDEX, macroHandlerIdx );

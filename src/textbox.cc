@@ -71,8 +71,6 @@ void textbox_scroll( TextBox * tb, int offset ) {
 	else {
 		tb->scroll_offset = min( tb->scroll_offset + offset, tb->num_lines - 1 );
 	}
-
-	textbox_draw( tb );
 }
 
 static size_t num_rows( size_t h ) {

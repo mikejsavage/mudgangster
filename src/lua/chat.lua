@@ -125,6 +125,7 @@ function mud.chat_no_space( form, ... )
 	end
 
 	mud.printb( "#lr%s", named )
+	handleChat()
 end
 
 function mud.chat( form, ... )
@@ -195,6 +196,7 @@ mud.alias( "/pm", {
 			local coloured = message:parseColours()
 			sendPM( client, coloured )
 			mud.printb( "\n#lrYou chat to %s, \"%s\"", client.name, coloured )
+			handleChat()
 		end
 	end,
 } )
@@ -213,6 +215,7 @@ mud.alias( "/chatname", function( name )
 	end
 
 	mud.print( "\n#s> Chat name changed to %s", chat_name )
+	handleChat()
 end )
 
 return {

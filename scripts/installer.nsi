@@ -15,6 +15,7 @@ Section "Install" SectionInstall
 	# Install stuff
 	SetOutPath $INSTDIR
 	File ..\release\mudgangster.exe
+	File licenses.txt
 
 	# Start menu shortcut
 	CreateDirectory "$SMPROGRAMS\Mud Gangster"
@@ -28,7 +29,7 @@ Section "Install" SectionInstall
 	WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MudGangster" "DisplayName" "Mud Gangster"
 	WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MudGangster" "UninstallString" "$INSTDIR\uninstall.exe"
 	WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MudGangster" "DisplayIcon" "$INSTDIR\mudgangster.exe"
-	WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MudGangster" "Publisher" "Yes Son"
+	WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MudGangster" "Publisher" "Hirve"
 	WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MudGangster" "DisplayVersion" "0.0.0.0"
 	WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MudGangster" "NoModify" 1
 	WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MudGangster" "NoRepair" 1
@@ -41,6 +42,7 @@ SectionEnd
 Section "Uninstall"
 	# Files
 	Delete "$INSTDIR\MudGangster.exe"
+	Delete "$INSTDIR\licenses.txt"
 	Delete "$INSTDIR\uninstall.exe"
 	RMDir "$INSTDIR"
 

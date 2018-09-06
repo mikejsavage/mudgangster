@@ -2,7 +2,7 @@ local lfs = require( "lfs" )
 local serialize = require( "serialize" )
 
 local ScriptsDir
-if package.config:sub( 1, 1 ) == "\\" then
+if mud.os == "windows" then
 	ScriptsDir = os.getenv( "APPDATA" ) .. "\\Mud Gangster\\scripts"
 else
 	ScriptsDir = os.getenv( "HOME" ) .. "/.mudgangster/scripts"

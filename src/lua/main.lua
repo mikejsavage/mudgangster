@@ -1,5 +1,6 @@
 mud = {
 	connected = false,
+	os = package.config:sub( 1, 1 ) == "\\" and "windows" or "linux"
 }
 
 table.unpack = table.unpack or unpack

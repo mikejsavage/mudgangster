@@ -47,4 +47,6 @@ void * platform_connect( const char ** err, const char * host, int port );
 void platform_send( void * sock, const char * data, size_t len );
 void platform_close( void * sock );
 
+bool ui_set_font( const char * name, int size );
+
 void event_loop();

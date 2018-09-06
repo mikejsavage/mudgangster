@@ -15,7 +15,7 @@ local printMain, newlineMain, drawMain,
 	printChat, newlineChat, drawChat,
 	setHandlers, urgent, setStatus,
 	sock_connect, sock_send, sock_close,
-	get_time = ...
+	get_time, set_font = ...
 
 local socket_api = {
 	connect = sock_connect,
@@ -38,6 +38,15 @@ mud.drawChat = drawChat
 
 mud.urgent = urgent
 mud.now = get_time
+
+mud.alias( "/font", {
+	[ "^(.-)%s+(%d+)$" ] = function( name, size )
+		size = tonumber( size )
+		if not set_font( name, size ) then
+			mud.print( "\n#s> Couldn't set font" )
+		end
+	end,
+}, "<font name> <font size>" )
 
 require( "status" ).init( setStatus )
 

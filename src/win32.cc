@@ -102,7 +102,8 @@ static Socket * socket_from_fd( int fd ) {
 struct MudFont {
 	int ascent;
 	int width, height;
-	HFONT font;
+	HFONT regular;
+	HFONT bold;
 };
 
 struct {
@@ -111,7 +112,7 @@ struct {
 	COLORREF cursor;
 
 	MudFont font;
-	MudFont bold_font;
+	HFONT dc_font;
 
 	union {
 		struct {
@@ -322,7 +323,7 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool for
 		return;
 	}
 
-	SelectObject( UI.back_buffer, ( bold || force_bold_font ? Style.bold_font : Style.font ).font );
+	SelectObject( UI.back_buffer, ( bold || force_bold_font ? Style.font.bold : Style.font.regular ) );
 	SetTextColor( UI.back_buffer, get_colour( colour, bold ) );
 	TextOutA( UI.back_buffer, left, top + SPACING, &c, 1 );
 
@@ -435,6 +436,45 @@ void ui_urgent() {
 	FlashWindow( UI.hwnd, FALSE );
 }
 
+bool ui_set_font( const char * name, int size ) {
+	HFONT regular = CreateFontA( size, 0, 0, 0, FW_REGULAR,
+		FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+		OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, FIXED_PITCH,
+		name );
+
+	if( regular == NULL )
+		return false;
+
+	HFONT bold = CreateFontA( size, 0, 0, 0, FW_BOLD,
+		FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+		OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, FIXED_PITCH,
+		name );
+
+	if( bold == NULL ) {
+		DeleteObject( regular );
+		return false;
+	}
+
+	if( Style.font.regular != NULL ) {
+		SelectObject( UI.hdc, Style.dc_font );
+		DeleteObject( Style.font.regular );
+		DeleteObject( Style.font.bold );
+	}
+
+	Style.font.regular = regular;
+	Style.font.bold = bold;
+	Style.dc_font = ( HFONT ) SelectObject( UI.hdc, Style.font.regular );
+
+	TEXTMETRIC metrics;
+	GetTextMetrics( UI.hdc, &metrics );
+
+	Style.font.height = metrics.tmHeight;
+	Style.font.width = metrics.tmAveCharWidth;
+	Style.font.ascent = metrics.tmAscent;
+
+	ui_draw();
+}
+
 LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 	switch( msg ) {
 		case WM_CREATE: {
@@ -442,24 +482,6 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 			UI.back_buffer = CreateCompatibleDC( UI.hdc );
 
 			SetBkMode( UI.back_buffer, TRANSPARENT );
-
-			Style.font.font = CreateFont( 14, 0, 0, 0, FW_REGULAR,
-				FALSE, FALSE, FALSE, DEFAULT_CHARSET,
-				OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH,
-				"Dina" );
-			Style.bold_font.font = CreateFont( 14, 0, 0, 0, FW_BOLD,
-				FALSE, FALSE, FALSE, DEFAULT_CHARSET,
-				OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH,
-				"Dina" );
-
-			SelectObject( UI.hdc, Style.font.font );
-
-			TEXTMETRIC metrics;
-			GetTextMetrics( UI.hdc, &metrics );
-
-			Style.font.height = metrics.tmHeight;
-			Style.font.width = metrics.tmMaxCharWidth;
-			Style.font.ascent = metrics.tmAscent;
 
 			Style.bg             = RGB( 0x1a, 0x1a, 0x1a );
 			Style.status_bg      = RGB( 0x33, 0x33, 0x33 );
@@ -483,6 +505,8 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 			Style.Colours.lmagenta = RGB( 0x87, 0x5f, 0xff );
 			Style.Colours.lcyan    = RGB( 0x29, 0xfb, 0xff );
 			Style.Colours.lwhite   = RGB( 0xce, 0xdb, 0xde );
+
+			ui_set_font( "", 14 );
 		} break;
 
 		case WM_SIZE: {
@@ -563,7 +587,7 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 
 		case WM_CHAR: {
 			if( wParam >= ' ' && wParam < 127 ) {
-				char c = wParam;
+				char c = char( wParam );
 				input_add( &c, 1 );
 				draw_input();
 			}
@@ -754,6 +778,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	}
 
 	UI = { };
+	Style = { };
 
 	textbox_init( &UI.main_text, SCROLLBACK_SIZE );
 	textbox_init( &UI.chat_text, CHAT_ROWS );

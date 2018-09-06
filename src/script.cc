@@ -233,6 +233,17 @@ extern "C" int mud_now( lua_State * L ) {
 	return 1;
 }
 
+extern "C" int mud_set_font( lua_State * L ) {
+	const char * name = luaL_checkstring( L, 1 );
+	int size = luaL_checkinteger( L, 2 );
+
+	bool ok = ui_set_font( name, size );
+
+	lua_pushboolean( lua, ok );
+
+	return 1;
+}
+
 } // anon namespace
 
 #if PLATFORM_WINDOWS
@@ -281,7 +292,9 @@ void script_init() {
 
 	lua_pushcfunction( lua, mud_now );
 
-	pcall( 13, "Error running main.lua" );
+	lua_pushcfunction( lua, mud_set_font );
+
+	pcall( 14, "Error running main.lua" );
 }
 
 void script_term() {

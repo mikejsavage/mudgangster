@@ -1,3 +1,5 @@
+local lfs = require( "lfs" )
+
 getmetatable( "" ).__mod = function( self, form )
 	if type( form ) == "table" then
 		return self:format( table.unpack( form ) )
@@ -41,17 +43,23 @@ function math.avg( a, b )
 end
 
 function io.readable( path )
-	-- TODO: this gives a no permissions error on windows
+	local attr, err = lfs.attributes( path )
+	if not attr then
+		return false, err
+	end
+
+	if attr.mode == "directory" then
+		return true
+	end
+
+	local file, err = io.open( path, "r" )
+	if not file then
+		return false, err
+	end
+
+	io.close( file )
+
 	return true
-	-- local file, err = io.open( path, "r" )
-        --
-	-- if not file then
-	-- 	return false, err
-	-- end
-        --
-	-- io.close( file )
-        --
-	-- return true
 end
 
 function enforce( var, name, ... )

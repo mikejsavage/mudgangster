@@ -900,6 +900,11 @@ void ui_get_font_size( int * fw, int * fh ) {
 	*fh = Style.font.height;
 }
 
+bool ui_set_font( const char * name, int size ) {
+	// TODO
+	return false;
+}
+
 void ui_term() {
 	textbox_destroy( &UI.main_text );
 	textbox_destroy( &UI.chat_text );

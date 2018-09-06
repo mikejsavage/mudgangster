@@ -652,8 +652,12 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 			while( true ) {
 				char buf[ 2048 ];
 				int n = recv( fd, buf, sizeof( buf ), 0 );
-				if( n >= 0 ) {
-					script_socketData( sock, n > 0 ? buf : NULL, n );
+				if( n > 0 ) {
+					script_socketData( sock, buf, n );
+				}
+				else if( n == 0 ) {
+					script_socketData( sock, NULL, n );
+					break;
 				}
 				else {
 					int err = WSAGetLastError();

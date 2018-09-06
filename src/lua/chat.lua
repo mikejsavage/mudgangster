@@ -129,7 +129,7 @@ function mud.chat_no_space( form, ... )
 end
 
 function mud.chat( form, ... )
-	mud.chatns( " " .. form, ... )
+	mud.chat_no_space( " " .. form, ... )
 end
 
 local function call( address, port )

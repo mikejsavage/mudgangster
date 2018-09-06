@@ -92,8 +92,8 @@ struct {
 	int max_width, max_height;
 	int depth;
 
-	// bool dirty;
-	// int dirty_left, dirty_top, dirty_right, dirty_bottom;
+	bool dirty;
+	int dirty_left, dirty_top, dirty_right, dirty_bottom;
 
 	bool has_focus;
 } UI;
@@ -167,9 +167,29 @@ static void set_fg( Colour colour, bool bold ) {
 	XSetForeground( UI.display, UI.gc, c );
 }
 
+static void make_dirty( int left, int top, int width, int height ) {
+	int right = left + width;
+	int bottom = top + height;
+
+	if( !UI.dirty ) {
+		UI.dirty = true;
+		UI.dirty_left = left;
+		UI.dirty_top = top;
+		UI.dirty_right = right;
+		UI.dirty_bottom = bottom;
+	}
+	else {
+		UI.dirty_left = min( UI.dirty_left, left );
+		UI.dirty_top = min( UI.dirty_top, top );
+		UI.dirty_right = max( UI.dirty_right, right );
+		UI.dirty_bottom = max( UI.dirty_bottom, bottom );
+	}
+}
+
 void ui_fill_rect( int left, int top, int width, int height, Colour colour, bool bold ) {
 	set_fg( colour, bold );
 	XFillRectangle( UI.display, UI.back_buffer, UI.gc, left, top, width, height );
+	make_dirty( left, top, width, height );
 }
 
 void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool bold_font ) {
@@ -329,28 +349,8 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool bol
 	XSetFont( UI.display, UI.gc, ( bold || bold_font ? Style.fontBold : Style.font ).font->fid );
 	set_fg( colour, bold );
 	XDrawString( UI.display, UI.back_buffer, UI.gc, left, top + Style.font.ascent + SPACING, &c, 1 );
-}
 
-void ui_dirty( int left, int top, int width, int height ) {
-	XCopyArea( UI.display, UI.back_buffer, UI.window, UI.gc, left, top, width, height, left, top );
-
-	// int right = left + width;
-	// int bottom = top + height;
-        //
-	// printf( "make dirty %d %d %d %d\n", left, top, right, bottom );
-	// if( !UI.dirty ) {
-	// 	UI.dirty = true;
-	// 	UI.dirty_left = left;
-	// 	UI.dirty_top = top;
-	// 	UI.dirty_right = right;
-	// 	UI.dirty_bottom = bottom;
-	// 	return;
-	// }
-        //
-	// UI.dirty_left = min( UI.dirty_left, left );
-	// UI.dirty_top = min( UI.dirty_top, top );
-	// UI.dirty_right = max( UI.dirty_right, right );
-	// UI.dirty_bottom = max( UI.dirty_bottom, bottom );
+	make_dirty( left, top, Style.font.width, Style.font.height + SPACING );
 }
 
 static Atom wmDeleteWindow;
@@ -395,14 +395,10 @@ void ui_draw_status() {
 		int y = UI.height - ( PADDING * 3 ) - Style.font.height * 2 - SPACING;
 		ui_draw_char( x, y, sc.c, sc.fg, sc.bold );
 	}
-
-	ui_dirty( 0, UI.height - ( PADDING * 4 ) - ( Style.font.height * 2 ), UI.width, Style.font.height + ( PADDING * 2 ) );
 }
 
 void draw_input() {
 	InputBuffer input = input_get_buffer();
-
-	XSetFont( UI.display, UI.gc, Style.font.font->fid );
 
 	int top = UI.height - PADDING - Style.font.height;
 	ui_fill_rect( PADDING, top, UI.width - PADDING * 2, Style.font.height, COLOUR_BG, false );
@@ -415,8 +411,6 @@ void draw_input() {
 	if( input.cursor_pos < input.len ) {
 		ui_draw_char( PADDING + input.cursor_pos * Style.font.width, top - SPACING, input.buf[ input.cursor_pos ], COLOUR_BG, false );
 	}
-
-	ui_dirty( PADDING, UI.height - ( PADDING + Style.font.height ), UI.width - PADDING * 2, Style.font.height );
 }
 
 void ui_draw() {
@@ -430,8 +424,6 @@ void ui_draw() {
 
 	int spacerY = ( 2 * PADDING ) + ( Style.font.height + SPACING ) * CHAT_ROWS;
 	ui_fill_rect( 0, spacerY, UI.width, 1, COLOUR_STATUSBG, false );
-
-	ui_dirty( 0, 0, UI.width, UI.height );
 }
 
 static void event_mouse_down( XEvent * xevent ) {
@@ -734,20 +726,23 @@ void ui_handleXEvents() {
 	event_names[ FocusOut ] = "FocusOut";
 	event_names[ FocusIn ] = "FocusIn";
 
-	while( XPending( UI.display ) ) {
-		XEvent event;
-		XNextEvent( UI.display, &event );
+	do {
+		while( XPending( UI.display ) ) {
+			XEvent event;
+			XNextEvent( UI.display, &event );
 
-		if( event_handlers[ event.type ] != NULL ) {
-			// printf( "%s\n", event_names[ event.type ] );
-			event_handlers[ event.type ]( &event );
+			if( event_handlers[ event.type ] != NULL ) {
+				// printf( "%s\n", event_names[ event.type ] );
+				event_handlers[ event.type ]( &event );
+			}
 		}
-	}
 
-	// if( UI.dirty ) {
-	// 	XCopyArea( UI.display, UI.back_buffer, UI.window, UI.gc, UI.dirty_left, UI.dirty_top, UI.dirty_right - UI.dirty_left, UI.dirty_bottom - UI.dirty_top, UI.dirty_left, UI.dirty_top );
-	// 	UI.dirty = false;
-	// }
+		if( UI.dirty ) {
+			XCopyArea( UI.display, UI.back_buffer, UI.window, UI.gc, UI.dirty_left, UI.dirty_top, UI.dirty_right - UI.dirty_left, UI.dirty_bottom - UI.dirty_top, UI.dirty_left, UI.dirty_top );
+			UI.dirty = false;
+			ui_handleXEvents();
+		}
+	} while( UI.dirty );
 }
 
 static MudFont loadFont( const char * fontStr ) {
@@ -805,6 +800,9 @@ void ui_init() {
 		s.in_use = false;
 	}
 
+	int default_width = 800;
+	int default_height = 600;
+
 	UI = { };
 
 	textbox_init( &UI.main_text, SCROLLBACK_SIZE );
@@ -829,7 +827,7 @@ void ui_init() {
 	attr.event_mask = ExposureMask | StructureNotifyMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | FocusChangeMask;
 	attr.colormap = UI.colorMap;
 
-	UI.window = XCreateWindow( UI.display, root, 0, 0, 800, 600, 0, UI.depth, InputOutput, visual, CWBackPixel | CWEventMask | CWColormap, &attr );
+	UI.window = XCreateWindow( UI.display, root, 0, 0, default_height, default_width, 0, UI.depth, InputOutput, visual, CWBackPixel | CWEventMask | CWColormap, &attr );
 	UI.gc = XCreateGC( UI.display, UI.window, 0, NULL );
 
 	XWMHints * hints = XAllocWMHints();
@@ -844,6 +842,13 @@ void ui_init() {
 
 	wmDeleteWindow = XInternAtom( UI.display, "WM_DELETE_WINDOW", false );
 	XSetWMProtocols( UI.display, UI.window, &wmDeleteWindow, 1 );
+
+	XEvent xev;
+	xev.xconfigure.width = default_width;
+	xev.xconfigure.height = default_height;
+	event_resize( &xev );
+
+	ui_handleXEvents();
 }
 
 void ui_main_draw() {
@@ -912,6 +917,8 @@ static Socket * socket_from_fd( int fd ) {
 }
 
 void event_loop() {
+	ui_handleXEvents();
+
 	while( !closing ) {
 		pollfd fds[ ARRAY_COUNT( sockets ) + 1 ] = { };
 		nfds_t num_fds = 1;
@@ -933,31 +940,29 @@ void event_loop() {
 
 		if( ok == 0 ) {
 			script_fire_intervals();
-			continue;
 		}
+		else {
+			for( size_t i = 1; i < ARRAY_COUNT( fds ); i++ ) {
+				if( fds[ i ].revents & POLLIN ) {
+					Socket * sock = socket_from_fd( fds[ i ].fd );
+					assert( sock != NULL );
 
-		for( size_t i = 1; i < ARRAY_COUNT( fds ); i++ ) {
-			if( fds[ i ].revents & POLLIN ) {
-				Socket * sock = socket_from_fd( fds[ i ].fd );
-				assert( sock != NULL );
-
-				char buf[ 8192 ];
-				size_t n;
-				TCPRecvResult res = net_recv( sock->sock, buf, sizeof( buf ), &n );
-				if( res == TCP_OK ) {
-					script_socketData( sock, buf, n );
-				}
-				else if( res == TCP_CLOSED ) {
-					script_socketData( sock, NULL, 0 );
-				}
-				else {
-					FATAL( "net_recv" );
+					char buf[ 8192 ];
+					size_t n;
+					TCPRecvResult res = net_recv( sock->sock, buf, sizeof( buf ), &n );
+					if( res == TCP_OK ) {
+						script_socketData( sock, buf, n );
+					}
+					else if( res == TCP_CLOSED ) {
+						script_socketData( sock, NULL, 0 );
+					}
+					else {
+						FATAL( "net_recv" );
+					}
 				}
 			}
 		}
 
-		if( fds[ 0 ].events & POLLIN ) {
-			ui_handleXEvents();
-		}
+		ui_handleXEvents();
 	}
 }

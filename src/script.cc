@@ -88,11 +88,6 @@ void script_fire_intervals() {
 
 namespace {
 
-extern "C" int mud_handleXEvents( lua_State * ) {
-	ui_handleXEvents();
-	return 0;
-}
-
 template< typename F >
 static void generic_print( F * f, lua_State * L ) {
 	const char * str = luaL_checkstring( L, 1 );
@@ -243,8 +238,6 @@ extern "C" int luaopen_lfs( lua_State * L );
 #endif
 
 void script_init() {
-	mud_handleXEvents( NULL ); // TODO: why is this here?
-
 	lua = luaL_newstate();
 	luaL_openlibs( lua );
 
@@ -264,8 +257,6 @@ void script_init() {
 		printf( "Error reading main.lua: %s\n", lua_tostring( lua, -1 ) );
 		exit( 1 );
 	}
-
-	lua_pushcfunction( lua, mud_handleXEvents );
 
 	lua_pushcfunction( lua, mud_printMain );
 	lua_pushcfunction( lua, mud_newlineMain );
@@ -287,7 +278,7 @@ void script_init() {
 
 	lua_pushcfunction( lua, mud_now );
 
-	pcall( 14, "Error running main.lua" );
+	pcall( 13, "Error running main.lua" );
 }
 
 void script_term() {

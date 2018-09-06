@@ -11,8 +11,7 @@ require( "event" )
 local script = require( "script" )
 local handlers = require( "handlers" )
 
-local handleXEvents,
-	printMain, newlineMain, drawMain,
+local printMain, newlineMain, drawMain,
 	printChat, newlineChat, drawChat,
 	setHandlers, urgent, setStatus,
 	sock_connect, sock_send, sock_close,
@@ -43,7 +42,5 @@ mud.now = get_time
 require( "status" ).init( setStatus )
 
 setHandlers( handlers.input, handlers.macro, handlers.close, socket_data_handler, handlers.interval )
-
-mud.handleXEvents = handleXEvents
 
 script.load()

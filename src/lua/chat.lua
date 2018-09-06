@@ -110,7 +110,6 @@ local function dataHandler( client, loop, watcher )
 	end
 
 	assert( coroutine.resume( client.handler, data ) )
-	mud.handleXEvents()
 end
 
 function mud.chatns( form, ... )

@@ -5,7 +5,12 @@ local function doSubs( line )
 		local sub = Subs[ i ]
 
 		if sub.enabled then
-			local newLine, subs = line:gsub( sub.pattern, sub.replacement )
+			local ok, newLine, subs = pcall( string.gsub, line, sub.pattern, sub.replacement )
+
+			if not ok then
+				mud.print( "\n#s> sub failed: %s\n%s\n%s", newLine, sub.pattern, sub.replacement )
+				return line
+			end
 
 			if subs ~= 0 then
 				return newLine

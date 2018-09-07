@@ -1,7 +1,7 @@
 local Aliases = { }
 
 local function doAlias( line )
-	local command, args = line:match( "^%s*(%S+)%s*(.*)$" )
+	local command, args = line:match( "^(%S+)%s*(.*)$" )
 	local alias = Aliases[ command ]
 
 	if alias and alias.enabled then

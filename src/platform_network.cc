@@ -78,81 +78,7 @@ static void setsockoptone( OSSocket fd, int level, int opt ) {
 	}
 }
 
-UDPSocket net_new_udp( NonblockingBool nonblocking, u16 port ) {
-	UDPSocket sock;
-
-	sock.ipv4 = socket( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
-	if( sock.ipv4 == INVALID_SOCKET ) {
-		FATAL( "socket" );
-	}
-	sock.ipv6 = socket( AF_INET6, SOCK_DGRAM, IPPROTO_UDP );
-	if( sock.ipv6 == INVALID_SOCKET ) {
-		FATAL( "socket" );
-	}
-
-	if( nonblocking == NET_NONBLOCKING ) {
-		make_socket_nonblocking( sock.ipv4 );
-		make_socket_nonblocking( sock.ipv6 );
-	}
-
-	if( port != 0 ) {
-		setsockoptone( sock.ipv4, SOL_SOCKET, SO_REUSEADDR );
-		setsockoptone( sock.ipv6, SOL_SOCKET, SO_REUSEADDR );
-		setsockoptone( sock.ipv6, IPPROTO_IPV6, IPV6_V6ONLY );
-	}
-
-	platform_init_sock( sock.ipv4 );
-	platform_init_sock( sock.ipv6 );
-
-	{
-		sockaddr_in my_addr4;
-		my_addr4.sin_family = AF_INET;
-		my_addr4.sin_port = htons( port );
-		my_addr4.sin_addr.s_addr = htonl( INADDR_ANY );
-		int ok = bind( sock.ipv4, ( struct sockaddr * ) &my_addr4, sizeof( my_addr4 ) );
-		if( ok == SOCKET_ERROR ) {
-			FATAL( "bind" );
-		}
-	}
-
-	{
-		sockaddr_in6 my_addr6;
-		my_addr6.sin6_family = AF_INET6;
-		my_addr6.sin6_port = htons( port );
-		my_addr6.sin6_addr = in6addr_any;
-		int ok = bind( sock.ipv6, ( struct sockaddr * ) &my_addr6, sizeof( my_addr6 ) );
-		if( ok == SOCKET_ERROR ) {
-			FATAL( "bind" );
-		}
-	}
-
-	return sock;
-}
-
-void net_send( UDPSocket sock, const void * data, size_t len, const NetAddress & addr ) {
-	struct sockaddr_storage ss = netaddress_to_sockaddr( addr );
-	socklen_t ss_size = sockaddr_size( ss );
-	OSSocket fd = addr.type == NET_IPV4 ? sock.ipv4 : sock.ipv6;
-	ssize_t ok = sendto( fd, ( const char * ) data, checked_cast< int >( len ), NET_SEND_FLAGS, ( struct sockaddr * ) &ss, ss_size );
-	if( ok == SOCKET_ERROR ) {
-		FATAL( "sendto" );
-	}
-}
-
-void net_destroy( UDPSocket * sock ) {
-	int ok4 = closesocket( sock->ipv4 );
-	if( ok4 == -1 ) {
-		FATAL( "closesocket" );
-	}
-	int ok6 = closesocket( sock->ipv6 );
-	if( ok6 == -1 ) {
-		FATAL( "closesocket" );
-	}
-	sock->ipv4 = INVALID_SOCKET;
-	sock->ipv6 = INVALID_SOCKET;
-}
-
-bool net_new_tcp( TCPSocket * sock, const NetAddress & addr, NonblockingBool nonblocking ) {
+bool net_new_tcp( TCPSocket * sock, const NetAddress & addr ) {
 	struct sockaddr_storage ss = netaddress_to_sockaddr( addr );
 	socklen_t ss_size = sockaddr_size( ss );
 
@@ -171,10 +97,6 @@ bool net_new_tcp( TCPSocket * sock, const NetAddress & addr, NonblockingBool non
 		return false;
 	}
 
-	if( nonblocking == NET_NONBLOCKING ) {
-		make_socket_nonblocking( sock->fd );
-	}
-
 	setsockoptone( sock->fd, SOL_SOCKET, SO_KEEPALIVE );
 
 	platform_init_sock( sock->fd );
@@ -188,28 +110,8 @@ bool net_send( TCPSocket sock, const void * data, size_t len ) {
 	return checked_cast< size_t >( sent ) == len;
 }
 
-TCPRecvResult net_recv( TCPSocket sock, void * buf, size_t buf_size, size_t * bytes_read, u32 timeout_ms ) {
+TCPRecvResult net_recv( TCPSocket sock, void * buf, size_t buf_size, size_t * bytes_read ) {
 	while( true ) {
-		if( timeout_ms > 0 ) {
-			fd_set fds;
-			FD_ZERO( &fds );
-			FD_SET( sock.fd, &fds );
-
-			struct timeval tv;
-			tv.tv_sec = timeout_ms / 1000;
-			tv.tv_usec = ( timeout_ms % 1000 ) * 1000;
-
-			int ok = select( sock.fd + 1, &fds, NULL, NULL, &tv );
-			// TODO: update timeout
-			if( ok == 0 ) {
-				return TCP_TIMEOUT;
-			}
-			if( ok == -1 ) {
-				if( errno != EINTR ) continue;
-				FATAL( "select" );
-			}
-		}
-
 		ssize_t r = recv( sock.fd, ( char * ) buf, buf_size, 0 );
 		// TODO: this is not right on windows
 		if( r == -1 ) {

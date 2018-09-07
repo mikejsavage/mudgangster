@@ -22,7 +22,6 @@ struct {
 	TextBox main_text;
 	TextBox chat_text;
 
-	int width, height;
 	int max_width, max_height;
 } UI;
 
@@ -218,7 +217,9 @@ bool ui_set_font( const char * name, int size ) {
 	Style.font.width = metrics.tmAveCharWidth;
 	Style.font.ascent = metrics.tmAscent;
 
-	ui_draw();
+	ui_redraw_everything();
+
+	return true;
 }
 
 LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
@@ -262,19 +263,19 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 			int old_max_width = UI.max_width;
 			int old_max_height = UI.max_height;
 
-			UI.max_width = max( UI.max_width, UI.width );
-			UI.max_height = max( UI.max_height, UI.height );
+			UI.max_width = max( UI.max_width, width );
+			UI.max_height = max( UI.max_height, height );
 
 			if( UI.max_width != old_max_width || UI.max_height != old_max_height ) {
-				if( old_width != -1 ) {
+				if( old_max_width != -1 ) {
 					DeleteObject( UI.back_buffer_bitmap );
 				}
 				UI.back_buffer_bitmap = CreateCompatibleBitmap( UI.hdc, UI.max_width, UI.max_height );
 				SelectObject( UI.back_buffer, UI.back_buffer_bitmap );
 			}
 
-			ui_resized( width, height );
-			ui_redraw();
+			ui_resize( width, height );
+			ui_redraw_everything();
 		} break;
 
 		case WM_PAINT: {
@@ -295,7 +296,7 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 
 		case WM_MOUSEMOVE: {
 			ui_mouse_move( GET_X_LPARAM( lParam ), GET_Y_LPARAM( lParam ) );
-			break;
+		} break;
 
 		case WM_LBUTTONUP: {
 			ui_mouse_up( GET_X_LPARAM( lParam ), GET_Y_LPARAM( lParam ) );
@@ -317,7 +318,6 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 			if( wParam >= ' ' && wParam < 127 ) {
 				char c = char( wParam );
 				input_add( &c, 1 );
-				draw_input();
 			}
 		} break;
 
@@ -335,53 +335,44 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 			switch( wParam ) {
 				case VK_BACK:
 					input_backspace();
-					draw_input();
 					break;
 
 				case VK_DELETE:
 					input_delete();
-					draw_input();
 					break;
 
 				case VK_RETURN:
 					input_return();
-					draw_input();
 					break;
 
 				case VK_LEFT:
 					input_left();
-					draw_input();
 					break;
 
 				case VK_RIGHT:
 					input_right();
-					draw_input();
 					break;
 
 				case VK_UP:
 					input_up();
-					draw_input();
 					break;
 
 				case VK_DOWN:
 					input_down();
-					draw_input();
 					break;
 
 				case VK_PRIOR:
 					if( shift )
-						textbox_scroll( &UI.main_text, 1 );
+						ui_scroll( 1 );
 					else
-						textbox_page_up( &UI.main_text );
-					textbox_draw( &UI.main_text );
+						ui_page_up();
 					break;
 
 				case VK_NEXT:
 					if( shift )
-						textbox_scroll( &UI.main_text, -1 );
+						ui_scroll( -1 );
 					else
-						textbox_page_down( &UI.main_text );
-					textbox_draw( &UI.main_text );
+						ui_page_down();
 					break;
 
 				ADD_MACRO( VK_NUMPAD0, "kp0" );
@@ -464,10 +455,7 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 			return DefWindowProc( hwnd, msg, wParam, lParam );
 	}
 
-	if( UI.main_text.dirty )
-		textbox_draw( &UI.main_text );
-	if( UI.chat_text.dirty )
-		textbox_draw( &UI.chat_text );
+	ui_redraw_dirty();
 
 	return 0;
 }
@@ -512,14 +500,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	}
 
 	UI = { };
+	UI.max_width = -1;
+
 	Style = { };
-
-	textbox_init( &UI.main_text, SCROLLBACK_SIZE );
-	textbox_init( &UI.chat_text, CHAT_ROWS );
-
-	statusContents = ( StatusChar * ) malloc( statusCapacity * sizeof( StatusChar ) );
-	if( statusContents == NULL )
-		FATAL( "malloc" );
 
 	WNDCLASSEX wc = { };
 	wc.cbSize        = sizeof( WNDCLASSEX );
@@ -531,8 +514,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	wc.hbrBackground = CreateSolidBrush( RGB( 0x1a, 0x1a, 0x1a ) );
 
 	if( !RegisterClassEx( &wc ) ) {
-		MessageBox(NULL, "Window Registration Failed!", "Error!",
-			MB_ICONEXCLAMATION | MB_OK);
+		MessageBox( NULL, "Window Registration Failed!", "Error!", MB_ICONEXCLAMATION | MB_OK );
 		return 0;
 	}
 
@@ -542,7 +524,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 		"Mud Gangster",
 		WS_OVERLAPPEDWINDOW | WS_MAXIMIZE | WS_VISIBLE,
 		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-		NULL, NULL, hInstance, NULL);
+		NULL, NULL, hInstance, NULL );
 
 	if( UI.hwnd == NULL ) {
 		MessageBox( NULL, "Window Creation Failed!", "Error!", MB_ICONEXCLAMATION | MB_OK );
@@ -554,6 +536,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	SetTimer( UI.hwnd, 1, 500, NULL );
 
 	net_init();
+	ui_init();
 	input_init();
 	script_init();
 
@@ -566,6 +549,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
 	script_term();
 	input_term();
+	ui_term();
 	net_term();
 
 	// TODO: clean up UI stuff

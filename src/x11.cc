@@ -484,7 +484,6 @@ void platform_ui_init() {
 	int default_height = 600;
 
 	UI = { };
-
 	UI.display = XOpenDisplay( NULL );
 	UI.screen = XDefaultScreen( UI.display );
 	UI.max_width = -1;

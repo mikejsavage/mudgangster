@@ -217,7 +217,7 @@ void ui_statusAdd( const char c, const Colour fg, const bool bold ) {
 		statusCapacity = newcapacity;
 	}
 
-	statusContents[ statusLen ] = ( StatusChar ) { c, fg, bold };
+	statusContents[ statusLen ] = { c, fg, bold };
 	statusLen++;
 	status_dirty = true;
 }

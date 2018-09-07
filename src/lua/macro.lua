@@ -6,7 +6,7 @@ local function doMacro( key )
 	if macro then
 		local ok, err = xpcall( macro, debug.traceback )
 		if not ok then
-			mud.print( "\n#s> macro callback failed: %s" % err )
+			mud.print( "\n#s> macro callback failed: %s", err )
 		end
 	end
 end

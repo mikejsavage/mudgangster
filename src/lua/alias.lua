@@ -12,7 +12,7 @@ local function doAlias( line )
 			local ok, err, subs = xpcall( string.gsub, debug.traceback, args, callback.pattern, callback.callback )
 
 			if not ok then
-				mud.print( "\n#s> alias callback failed: %s" % err )
+				mud.print( "\n#s> alias callback failed: %s", err )
 
 				return true
 			end
@@ -25,7 +25,7 @@ local function doAlias( line )
 		end
 
 		if badSyntax then
-			mud.print( "\nsyntax: %s %s" % { command, alias.syntax } )
+			mud.print( "\nsyntax: %s %s", command, alias.syntax )
 		end
 
 		return true

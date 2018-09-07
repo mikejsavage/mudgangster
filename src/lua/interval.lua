@@ -9,7 +9,7 @@ local function doIntervals()
 		if event.enabled then
 			local ok, err = xpcall( event.checkTick, debug.traceback, event, now )
 			if not ok then
-				mud.print( "\n#s> interval callback failed: %s" % err )
+				mud.print( "\n#s> interval callback failed: %s", err )
 			end
 		end
 	end

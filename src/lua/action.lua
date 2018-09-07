@@ -56,10 +56,10 @@ local function genericActions( actions )
 				local action = actions[ i ]
 
 				if action.enabled then
-					local ok, err = pcall( string.gsub, line, action.pattern, action.callback )
+					local ok, err = xpcall( string.gsub, debug.traceback, line, action.pattern, action.callback )
 
 					if not ok then
-						mud.print( debug.traceback( "\n#s> action callback failed: %s" % err ) )
+						mud.print( "\n#s> action callback failed: %s", err )
 					end
 				end
 			end

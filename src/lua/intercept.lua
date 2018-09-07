@@ -5,10 +5,10 @@ local function doIntercept( command )
 		local intercept = Intercepts[ i ]
 
 		if intercept.enabled then
-			local ok, err = pcall( string.gsub, command, intercept.pattern, intercept.callback )
+			local ok, err = xpcall( string.gsub, debug.traceback, command, intercept.pattern, intercept.callback )
 
 			if not ok then
-				mud.print( debug.traceback( "\n#s> intercept callback failed: %s" % err ) )
+				mud.print( "\n#s> intercept callback failed: %s", err )
 			end
 		end
 	end

@@ -34,7 +34,7 @@ void ui_chat_newline();
 void ui_chat_print( const char * str, size_t len, Colour fg, Colour bg, bool bold );
 
 void ui_fill_rect( int left, int top, int width, int height, Colour colour, bool bold );
-void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool bold_font = false );
+void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool force_bold_font = false );
 
 void ui_get_font_size( int * fw, int * fh );
 

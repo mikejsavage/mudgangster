@@ -99,9 +99,10 @@ struct {
 } UI;
 
 struct MudFont {
-	int ascent, descent;
 	int width, height;
-	XFontStruct * font;
+	int ascent;
+	XFontStruct * regular;
+	XFontStruct * bold;
 };
 
 struct {
@@ -110,7 +111,6 @@ struct {
 	ulong cursor;
 
 	MudFont font;
-	MudFont fontBold;
 
 	union {
 		struct {
@@ -192,7 +192,7 @@ void ui_fill_rect( int left, int top, int width, int height, Colour colour, bool
 	make_dirty( left, top, width, height );
 }
 
-void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool bold_font ) {
+void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool force_bold_font ) {
 	int left_spacing = Style.font.width / 2;
 	int right_spacing = Style.font.width - left_spacing;
 	int line_height = Style.font.height + SPACING;
@@ -346,7 +346,7 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool bol
 		return;
 	}
 
-	XSetFont( UI.display, UI.gc, ( bold || bold_font ? Style.fontBold : Style.font ).font->fid );
+	XSetFont( UI.display, UI.gc, ( bold || force_bold_font ? Style.font.bold : Style.font.regular )->fid );
 	set_fg( colour, bold );
 	XDrawString( UI.display, UI.back_buffer, UI.gc, left, top + Style.font.ascent + SPACING, &c, 1 );
 
@@ -752,18 +752,20 @@ void ui_handleXEvents() {
 	} while( UI.dirty );
 }
 
-static MudFont loadFont( const char * fontStr ) {
+static MudFont load_font( const char * regular_name, const char * bold_name ) {
 	MudFont font;
 
-	font.font = XLoadQueryFont( UI.display, fontStr );
-	if( !font.font )
-		errx( 1, "XLoadQueryFont: %s", fontStr );
+	font.regular = XLoadQueryFont( UI.display, regular_name );
+	if( font.regular == NULL )
+		errx( 1, "XLoadQueryFont: %s", regular_name );
 
-	font.ascent = font.font->ascent;
-	font.descent = font.font->descent;
+	font.bold = XLoadQueryFont( UI.display, bold_name );
+	if( font.bold == NULL )
+		errx( 1, "XLoadQueryFont: %s", bold_name );
 
-	font.width = font.font->max_bounds.rbearing - font.font->min_bounds.lbearing;
-	font.height = font.ascent + font.descent;
+	font.ascent = font.regular->ascent;
+	font.width = font.regular->max_bounds.rbearing - font.regular->min_bounds.lbearing;
+	font.height = font.ascent + font.regular->descent;
 
 	return font;
 }
@@ -798,8 +800,7 @@ static void initStyle() {
 	Style.Colours.lcyan    = make_color( "#29fbff" );
 	Style.Colours.lwhite   = make_color( "#cedbde" );
 
-	Style.font = loadFont( "-windows-dina-medium-r-normal--10-*-*-*-c-0-*-*" );
-	Style.fontBold = loadFont( "-windows-dina-bold-r-normal--10-*-*-*-c-0-*-*" );
+	Style.font = load_font( "-windows-dina-medium-r-normal--10-*-*-*-c-0-*-*", "-windows-dina-bold-r-normal--10-*-*-*-c-0-*-*" );
 }
 
 void ui_init() {
@@ -910,9 +911,10 @@ void ui_term() {
 	textbox_destroy( &UI.chat_text );
 	free( statusContents );
 
-	XFreeFont( UI.display, Style.font.font );
-	XFreeFont( UI.display, Style.fontBold.font );
+	XFreeFont( UI.display, Style.font.regular );
+	XFreeFont( UI.display, Style.font.bold );
 
+	XFreePixmap( UI.display, UI.back_buffer );
 	XFreeGC( UI.display, UI.gc );
 	XDestroyWindow( UI.display, UI.window );
 	XCloseDisplay( UI.display );

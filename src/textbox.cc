@@ -126,9 +126,11 @@ void textbox_mouse_move( TextBox * tb, int window_x, int window_y ) {
 	int row = ( tb->h - y ) / ( fh + SPACING );
 	int col = x / fw;
 
-	tb->selection_end_col = col;
-	tb->selection_end_row = row;
-	tb->dirty = true;
+	if( col != tb->selection_end_col || row != tb->selection_end_row ) {
+		tb->selection_end_col = col;
+		tb->selection_end_row = row;
+		tb->dirty = true;
+	}
 }
 
 void textbox_mouse_up( TextBox * tb, int window_x, int window_y ) {

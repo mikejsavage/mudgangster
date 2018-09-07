@@ -151,11 +151,6 @@ extern "C" int mud_newlineMain( lua_State * L ) {
 	return 0;
 }
 
-extern "C" int mud_drawMain( lua_State * L ) {
-	ui_main_draw();
-	return 0;
-}
-
 extern "C" int mud_printChat( lua_State * L ) {
 	generic_print( ui_chat_print, L );
 	return 0;
@@ -163,11 +158,6 @@ extern "C" int mud_printChat( lua_State * L ) {
 
 extern "C" int mud_newlineChat( lua_State * L ) {
 	ui_chat_newline();
-	return 0;
-}
-
-extern "C" int mud_drawChat( lua_State * L ) {
-	ui_chat_draw();
 	return 0;
 }
 
@@ -274,11 +264,8 @@ void script_init() {
 
 	lua_pushcfunction( lua, mud_printMain );
 	lua_pushcfunction( lua, mud_newlineMain );
-	lua_pushcfunction( lua, mud_drawMain );
-
 	lua_pushcfunction( lua, mud_printChat );
 	lua_pushcfunction( lua, mud_newlineChat );
-	lua_pushcfunction( lua, mud_drawChat );
 
 	lua_pushcfunction( lua, mud_setHandlers );
 
@@ -294,7 +281,7 @@ void script_init() {
 
 	lua_pushcfunction( lua, mud_set_font );
 
-	pcall( 14, "Error running main.lua" );
+	pcall( 12, "Error running main.lua" );
 }
 
 void script_term() {

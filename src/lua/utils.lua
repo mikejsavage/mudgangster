@@ -141,14 +141,6 @@ local function genericPrint( message, main, chat )
 			end
 		end
 	end
-
-	if main then
-		mud.drawMain()
-	end
-
-	if chat then
-		mud.drawChat()
-	end
 end
 
 function mud.print( form, ... )
@@ -175,8 +167,6 @@ function mud.printr( str, fg, bg, bold )
 			mud.newlineMain()
 		end
 	end
-
-	mud.drawMain()
 end
 
 function mud.enable( ... )

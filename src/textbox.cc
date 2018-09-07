@@ -49,6 +49,7 @@ void textbox_add( TextBox * tb, const char * str, size_t len, Colour fg, Colour 
 	};
 
 	line->len += n;
+	tb->dirty = true;
 }
 
 void textbox_newline( TextBox * tb ) {
@@ -62,6 +63,8 @@ void textbox_newline( TextBox * tb ) {
 	tb->head++;
 	TextBox::Line * line = &tb->lines[ ( tb->head + tb->num_lines ) % tb->max_lines ];
 	line->len = 0;
+
+	tb->dirty = true;
 }
 
 void textbox_scroll( TextBox * tb, int offset ) {
@@ -71,6 +74,8 @@ void textbox_scroll( TextBox * tb, int offset ) {
 	else {
 		tb->scroll_offset = min( tb->scroll_offset + offset, tb->num_lines - 1 );
 	}
+
+	tb->dirty = true;
 }
 
 static size_t num_rows( size_t h ) {
@@ -128,7 +133,7 @@ static bool inside_selection( int col, int row, int start_col, int start_row, in
 	return false;
 }
 
-void textbox_draw( const TextBox * tb ) {
+void textbox_draw( TextBox * tb ) {
 	if( tb->w == 0 || tb->h == 0 )
 		return;
 
@@ -192,4 +197,6 @@ void textbox_draw( const TextBox * tb ) {
 		lines_drawn++;
 		rows_drawn += line_rows;
 	}
+
+	tb->dirty = false;
 }

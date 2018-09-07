@@ -12,8 +12,7 @@ require( "event" )
 local script = require( "script" )
 local handlers = require( "handlers" )
 
-local printMain, newlineMain, drawMain,
-	printChat, newlineChat, drawChat,
+local printMain, newlineMain, printChat, newlineChat,
 	setHandlers, urgent, setStatus,
 	sock_connect, sock_send, sock_close,
 	get_time, set_font = ...
@@ -31,11 +30,8 @@ require( "chat" ).init( handlers.chat )
 
 mud.printMain = printMain
 mud.newlineMain = newlineMain
-mud.drawMain = drawMain
-
 mud.printChat = printChat
 mud.newlineChat = newlineChat
-mud.drawChat = drawChat
 
 mud.urgent = urgent
 mud.now = get_time

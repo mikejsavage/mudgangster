@@ -139,9 +139,6 @@ local function handleChat( message )
 		end
 	end
 
-	mud.drawMain()
-	mud.drawChat()
-
 	action.doChatActions( noAnsi )
 	action.doChatAnsiActions( message )
 
@@ -219,8 +216,6 @@ local function handleData( data )
 			action.doAnsiActions( clean )
 		end
 
-		mud.drawMain()
-
 		dataBuffer = ""
 		receiving = false
 	end
@@ -255,7 +250,6 @@ local function handleCommand( input, hide )
 		end
 
 		mud.send( input .. "\n" )
-		mud.drawMain()
 	end 
 end
 

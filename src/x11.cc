@@ -744,6 +744,11 @@ void ui_handleXEvents() {
 			}
 		}
 
+		if( UI.main_text.dirty )
+			textbox_draw( &UI.main_text );
+		if( UI.chat_text.dirty )
+			textbox_draw( &UI.chat_text );
+
 		if( UI.dirty ) {
 			XCopyArea( UI.display, UI.back_buffer, UI.window, UI.gc, UI.dirty_left, UI.dirty_top, UI.dirty_right - UI.dirty_left, UI.dirty_bottom - UI.dirty_top, UI.dirty_left, UI.dirty_top );
 			UI.dirty = false;

@@ -28,6 +28,8 @@ struct TextBox {
 	bool selecting;
 	int selection_start_col, selection_start_row;
 	int selection_end_col, selection_end_row;
+
+	bool dirty;
 };
 
 void textbox_init( TextBox * tb, size_t scrollback );
@@ -42,6 +44,6 @@ void textbox_page_up( TextBox * tb );
 void textbox_set_pos( TextBox * tb, int x, int y );
 void textbox_set_size( TextBox * tb, int w, int h );
 
-void textbox_draw( const TextBox * tb );
+void textbox_draw( TextBox * tb );
 
 void textbox_destroy( TextBox * tb );

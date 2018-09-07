@@ -41,6 +41,10 @@ void textbox_scroll( TextBox * tb, int offset );
 void textbox_page_down( TextBox * tb );
 void textbox_page_up( TextBox * tb );
 
+void textbox_mouse_down( TextBox * tb, int x, int y );
+void textbox_mouse_move( TextBox * tb, int x, int y );
+void textbox_mouse_up( TextBox * tb, int x, int y );
+
 void textbox_set_pos( TextBox * tb, int x, int y );
 void textbox_set_size( TextBox * tb, int w, int h );
 

@@ -2,13 +2,6 @@
 
 #include <stddef.h>
 
-struct InputBuffer {
-	char * buf;
-
-	size_t len;
-	size_t cursor_pos;
-};
-
 void input_init();
 void input_term();
 
@@ -23,4 +16,7 @@ void input_right();
 
 void input_add( const char * buffer, int len );
 
-InputBuffer input_get_buffer();
+void input_set_pos( int x, int y );
+void input_set_size( int w, int h );
+bool input_is_dirty();
+void input_draw();

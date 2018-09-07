@@ -5,9 +5,9 @@
 
 #if PLATFORM_WINDOWS
 #include <winsock2.h>
-typedef SOCKET OSSocket;
+typedef SOCKET PlatformSocket;
 #elif PLATFORM_UNIX
-typedef int OSSocket;
+typedef int PlatformSocket;
 #else
 #error new platform
 #endif
@@ -21,7 +21,7 @@ enum TCPRecvResult {
 };
 
 struct TCPSocket {
-	OSSocket fd;
+	PlatformSocket fd;
 };
 
 struct IPv4 { u8 bytes[ 4 ]; };

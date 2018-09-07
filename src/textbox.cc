@@ -92,6 +92,55 @@ void textbox_page_up( TextBox * tb ) {
 	textbox_scroll( tb, num_rows( tb->h ) - 1 );
 }
 
+void textbox_mouse_down( TextBox * tb, int window_x, int window_y ) {
+	int x = window_x - tb->x;
+	int y = window_y - tb->y;
+
+	if( x < 0 || y < 0 || x >= tb->w || y >= tb->h )
+		return;
+
+	int fw, fh;
+	ui_get_font_size( &fw, &fh );
+
+	int row = ( tb->h - y ) / ( fh + SPACING );
+	int col = x / fw;
+
+	tb->selecting = true;
+	tb->selection_start_col = col;
+	tb->selection_start_row = row;
+	tb->selection_end_col = col;
+	tb->selection_end_row = row;
+	tb->dirty = true;
+}
+
+void textbox_mouse_move( TextBox * tb, int window_x, int window_y ) {
+	if( !tb->selecting )
+		return;
+
+	int x = window_x - tb->x;
+	int y = window_y - tb->y;
+
+	int fw, fh;
+	ui_get_font_size( &fw, &fh );
+
+	int row = ( tb->h - y ) / ( fh + SPACING );
+	int col = x / fw;
+
+	tb->selection_end_col = col;
+	tb->selection_end_row = row;
+	tb->dirty = true;
+}
+
+void textbox_mouse_up( TextBox * tb, int window_x, int window_y ) {
+	if( !tb->selecting )
+		return;
+
+	// TODO: copy the text
+
+	tb->selecting = false;
+	tb->dirty = true;
+}
+
 void textbox_set_pos( TextBox * tb, int x, int y ) {
 	tb->x = x;
 	tb->y = y;

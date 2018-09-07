@@ -85,10 +85,6 @@ struct {
 
 	Window window;
 
-	TextBox main_text;
-	TextBox chat_text;
-
-	int width, height;
 	int max_width, max_height;
 	int depth;
 
@@ -167,7 +163,7 @@ static void set_fg( Colour colour, bool bold ) {
 	XSetForeground( UI.display, UI.gc, c );
 }
 
-static void make_dirty( int left, int top, int width, int height ) {
+void platform_make_dirty( int left, int top, int width, int height ) {
 	int right = left + width;
 	int bottom = top + height;
 
@@ -186,332 +182,29 @@ static void make_dirty( int left, int top, int width, int height ) {
 	}
 }
 
-void ui_fill_rect( int left, int top, int width, int height, Colour colour, bool bold ) {
+void platform_fill_rect( int left, int top, int width, int height, Colour colour, bool bold ) {
 	set_fg( colour, bold );
 	XFillRectangle( UI.display, UI.back_buffer, UI.gc, left, top, width, height );
-	make_dirty( left, top, width, height );
 }
 
-void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool force_bold_font ) {
-	int left_spacing = Style.font.width / 2;
-	int right_spacing = Style.font.width - left_spacing;
-	int line_height = Style.font.height + SPACING;
-	int top_spacing = line_height / 2;
-	int bot_spacing = line_height - top_spacing;
-
-	// TODO: not the right char...
-	// if( uint8_t( c ) == 155 ) { // fill
-	// 	ui_fill_rect( left, top, Style.font.width, Style.font.height, colour, bold );
-	// 	return;
-	// }
-
-	// TODO: this has a vertical seam. using textbox-space coordinates would help
-	if( uint8_t( c ) == 176 ) { // light shade
-		for( int y = 0; y < Style.font.height; y += 3 ) {
-			for( int x = y % 6 == 0 ? 0 : 1; x < Style.font.width; x += 2 ) {
-				ui_fill_rect( left + x, top + y, 1, 1, colour, bold );
-			}
-		}
-		return;
-	}
-
-	// TODO: this has a horizontal seam but so does mm2k
-	if( uint8_t( c ) == 177 ) { // medium shade
-		for( int y = 0; y < Style.font.height; y += 2 ) {
-			for( int x = y % 4 == 0 ? 1 : 0; x < Style.font.width; x += 2 ) {
-				ui_fill_rect( left + x, top + y, 1, 1, colour, bold );
-			}
-		}
-		return;
-	}
-
-	// TODO: this probably has a horizontal seam
-	if( uint8_t( c ) == 178 ) { // heavy shade
-		for( int y = 0; y < Style.font.height + SPACING; y++ ) {
-			for( int x = y % 2 == 0 ? 1 : 0; x < Style.font.width; x += 2 ) {
-				ui_fill_rect( left + x, top + y, 1, 1, colour, bold );
-			}
-		}
-		return;
-	}
-
-	if( uint8_t( c ) == 179 ) { // vertical
-		ui_fill_rect( left + left_spacing, top, 1, line_height, colour, bold );
-		return;
-		// set_fg( colour, bold );
-		// const char asdf[] = "│";
-		// Xutf8DrawString( UI.display, UI.back_buffer, ( bold ? Style.fontBold : Style.font ).font, UI.gc, left, top + Style.font.ascent + SPACING, asdf, sizeof( asdf ) - 1 );
-	}
-
-	if( uint8_t( c ) == 180 ) { // right stopper
-		ui_fill_rect( left, top + top_spacing, left_spacing, 1, colour, bold );
-		ui_fill_rect( left + left_spacing, top, 1, line_height, colour, bold );
-		return;
-	}
-
-	if( uint8_t( c ) == 186 ) { // double vertical
-		ui_fill_rect( left + left_spacing - 1, top, 1, line_height, colour, bold );
-		ui_fill_rect( left + left_spacing + 1, top, 1, line_height, colour, bold );
-		return;
-	}
-
-	if( uint8_t( c ) == 187 ) { // double top right
-		ui_fill_rect( left, top + top_spacing - 1, right_spacing + 1, 1, colour, bold );
-		ui_fill_rect( left + left_spacing + 1, top + top_spacing - 1, 1, bot_spacing + 1, colour, bold );
-		ui_fill_rect( left, top + top_spacing + 1, right_spacing - 1, 1, colour, bold );
-		ui_fill_rect( left + left_spacing - 1, top + top_spacing + 1, 1, bot_spacing - 1, colour, bold );
-		return;
-	}
-
-	if( uint8_t( c ) == 188 ) { // double bottom right
-		ui_fill_rect( left, top + top_spacing + 1, right_spacing + 1, 1, colour, bold );
-		ui_fill_rect( left + left_spacing + 1, top, 1, top_spacing + 1, colour, bold );
-		ui_fill_rect( left, top + top_spacing - 1, right_spacing - 1, 1, colour, bold );
-		ui_fill_rect( left + left_spacing - 1, top, 1, top_spacing - 1, colour, bold );
-		return;
-	}
-
-	if( uint8_t( c ) == 191 ) { // top right
-		ui_fill_rect( left, top + top_spacing, left_spacing, 1, colour, bold );
-		ui_fill_rect( left + left_spacing, top + top_spacing, 1, bot_spacing, colour, bold );
-		return;
-	}
-
-	if( uint8_t( c ) == 192 ) { // bottom left
-		ui_fill_rect( left + left_spacing, top + top_spacing, right_spacing, 1, colour, bold );
-		ui_fill_rect( left + left_spacing, top, 1, top_spacing, colour, bold );
-		return;
-	}
-
-	if( uint8_t( c ) == 193 ) { // bottom stopper
-		ui_fill_rect( left + left_spacing, top, 1, top_spacing, colour, bold );
-		ui_fill_rect( left, top + top_spacing, Style.font.width, 1, colour, bold );
-		return;
-	}
-
-	if( uint8_t( c ) == 194 ) { // top stopper
-		ui_fill_rect( left + left_spacing, top + top_spacing, 1, bot_spacing, colour, bold );
-		ui_fill_rect( left, top + top_spacing, Style.font.width, 1, colour, bold );
-		return;
-	}
-
-	if( uint8_t( c ) == 195 ) { // left stopper
-		ui_fill_rect( left + left_spacing, top + top_spacing, right_spacing, 1, colour, bold );
-		ui_fill_rect( left + left_spacing, top, 1, line_height, colour, bold );
-		return;
-	}
-
-	if( uint8_t( c ) == 196 ) { // horizontal
-		ui_fill_rect( left, top + top_spacing, Style.font.width, 1, colour, bold );
-		return;
-	}
-
-	if( uint8_t( c ) == 197 ) { // cross
-		ui_fill_rect( left, top + top_spacing, Style.font.width, 1, colour, bold );
-		ui_fill_rect( left + left_spacing, top, 1, line_height, colour, bold );
-		return;
-	}
-
-	if( uint8_t( c ) == 200 ) { // double bottom left
-		ui_fill_rect( left + left_spacing - 1, top + top_spacing + 1, right_spacing + 1, 1, colour, bold );
-		ui_fill_rect( left + left_spacing - 1, top, 1, top_spacing + 1, colour, bold );
-		ui_fill_rect( left + left_spacing + 1, top + top_spacing - 1, right_spacing - 1, 1, colour, bold );
-		ui_fill_rect( left + left_spacing + 1, top, 1, top_spacing - 1, colour, bold );
-		return;
-	}
-
-	if( uint8_t( c ) == 201 ) { // double top left
-		ui_fill_rect( left + left_spacing - 1, top + top_spacing - 1, right_spacing + 1, 1, colour, bold );
-		ui_fill_rect( left + left_spacing - 1, top + top_spacing - 1, 1, bot_spacing + 1, colour, bold );
-		ui_fill_rect( left + left_spacing + 1, top + top_spacing + 1, right_spacing - 1, 1, colour, bold );
-		ui_fill_rect( left + left_spacing + 1, top + top_spacing + 1, 1, bot_spacing - 1, colour, bold );
-		return;
-	}
-
-	if( uint8_t( c ) == 205 ) { // double horizontal
-		ui_fill_rect( left, top + top_spacing - 1, Style.font.width, 1, colour, bold );
-		ui_fill_rect( left, top + top_spacing + 1, Style.font.width, 1, colour, bold );
-		return;
-	}
-
-	if( uint8_t( c ) == 217 ) { // bottom right
-		ui_fill_rect( left, top + top_spacing, right_spacing, 1, colour, bold );
-		ui_fill_rect( left + left_spacing, top, 1, top_spacing, colour, bold );
-		return;
-	}
-
-	if( uint8_t( c ) == 218 ) { // top left
-		ui_fill_rect( left + left_spacing, top + top_spacing, right_spacing, 1, colour, bold );
-		ui_fill_rect( left + left_spacing, top + top_spacing, 1, bot_spacing, colour, bold );
-		return;
-	}
-
+void platform_draw_char( int left, int top, char c, Colour colour, bool bold, bool force_bold_font ) {
 	XSetFont( UI.display, UI.gc, ( bold || force_bold_font ? Style.font.bold : Style.font.regular )->fid );
 	set_fg( colour, bold );
 	XDrawString( UI.display, UI.back_buffer, UI.gc, left, top + Style.font.ascent + SPACING, &c, 1 );
-
-	make_dirty( left, top, Style.font.width, Style.font.height + SPACING );
 }
 
 static Atom wmDeleteWindow;
 
-typedef struct {
-	char c;
-
-	Colour fg;
-	bool bold;
-} StatusChar;
-
-static StatusChar * statusContents = NULL;
-static size_t statusCapacity = 256;
-static size_t statusLen = 0;
-
-void ui_clear_status() {
-	statusLen = 0;
-}
-
-void ui_statusAdd( const char c, const Colour fg, const bool bold ) {
-	if( ( statusLen + 1 ) * sizeof( StatusChar ) > statusCapacity ) {
-		size_t newcapacity = statusCapacity * 2;
-		StatusChar * newcontents = ( StatusChar * ) realloc( statusContents, newcapacity );
-		if( !newcontents )
-			err( 1, "realloc" );
-
-		statusContents = newcontents;
-		statusCapacity = newcapacity;
-	}
-
-	statusContents[ statusLen ] = ( StatusChar ) { c, fg, bold };
-	statusLen++;
-}
-
-void ui_draw_status() {
-	ui_fill_rect( 0, UI.height - PADDING * 4 - Style.font.height * 2, UI.width, Style.font.height + PADDING * 2, COLOUR_STATUSBG, false );
-
-	for( size_t i = 0; i < statusLen; i++ ) {
-		StatusChar sc = statusContents[ i ];
-
-		int x = PADDING + i * Style.font.width;
-		int y = UI.height - ( PADDING * 3 ) - Style.font.height * 2 - SPACING;
-		ui_draw_char( x, y, sc.c, sc.fg, sc.bold );
-	}
-}
-
-void draw_input() {
-	InputBuffer input = input_get_buffer();
-
-	int top = UI.height - PADDING - Style.font.height;
-	ui_fill_rect( PADDING, top, UI.width - PADDING * 2, Style.font.height, COLOUR_BG, false );
-
-	for( size_t i = 0; i < input.len; i++ )
-		ui_draw_char( PADDING + i * Style.font.width, top - SPACING, input.buf[ i ], WHITE, false );
-
-	ui_fill_rect( PADDING + input.cursor_pos * Style.font.width, top, Style.font.width, Style.font.height, COLOUR_CURSOR, false );
-
-	if( input.cursor_pos < input.len ) {
-		ui_draw_char( PADDING + input.cursor_pos * Style.font.width, top - SPACING, input.buf[ input.cursor_pos ], COLOUR_BG, false );
-	}
-}
-
-void ui_draw() {
-	ui_fill_rect( 0, 0, UI.width, UI.height, COLOUR_BG, false );
-
-	draw_input();
-	ui_draw_status();
-
-	textbox_draw( &UI.chat_text );
-	textbox_draw( &UI.main_text );
-
-	int spacerY = ( 2 * PADDING ) + ( Style.font.height + SPACING ) * CHAT_ROWS;
-	ui_fill_rect( 0, spacerY, UI.width, 1, COLOUR_STATUSBG, false );
-}
-
 static void event_mouse_down( XEvent * xevent ) {
-	const XButtonEvent * event = &xevent->xbutton;
-
-	if( event->x >= UI.main_text.x && event->x < UI.main_text.x + UI.main_text.w && event->y >= UI.main_text.y && event->y < UI.main_text.y + UI.main_text.h ) {
-		int x = event->x - UI.main_text.x;
-		int y = event->y - UI.main_text.y;
-
-		int my = UI.main_text.h - y;
-
-		int row = my / ( Style.font.height + SPACING );
-		int col = x / Style.font.width;
-
-		UI.main_text.selecting = true;
-		UI.main_text.selection_start_col = col;
-		UI.main_text.selection_start_row = row;
-		UI.main_text.selection_end_col = col;
-		UI.main_text.selection_end_row = row;
-
-		textbox_draw( &UI.main_text );
-	}
-
-	if( event->x >= UI.chat_text.x && event->x < UI.chat_text.x + UI.chat_text.w && event->y >= UI.chat_text.y && event->y < UI.chat_text.y + UI.chat_text.h ) {
-		int x = event->x - UI.chat_text.x;
-		int y = event->y - UI.chat_text.y;
-
-		int my = UI.chat_text.h - y;
-
-		int row = my / ( Style.font.height + SPACING );
-		int col = x / Style.font.width;
-
-		UI.chat_text.selecting = true;
-		UI.chat_text.selection_start_col = col;
-		UI.chat_text.selection_start_row = row;
-		UI.chat_text.selection_end_col = col;
-		UI.chat_text.selection_end_row = row;
-
-		textbox_draw( &UI.chat_text );
-	}
-}
-
-static void event_mouse_up( XEvent * xevent ) {
-	const XButtonEvent * event = &xevent->xbutton;
-
-	if( UI.main_text.selecting ) {
-		UI.main_text.selecting = false;
-		textbox_draw( &UI.main_text );
-	}
-
-	if( UI.chat_text.selecting ) {
-		UI.chat_text.selecting = false;
-		textbox_draw( &UI.chat_text );
-	}
+	ui_mouse_down( xevent->xbutton.x, xevent->xbutton.y );
 }
 
 static void event_mouse_move( XEvent * xevent ) {
-	const XMotionEvent * event = &xevent->xmotion;
+	ui_mouse_move( xevent->xmotion.x, xevent->xmotion.y );
+}
 
-	if( UI.main_text.selecting ) {
-		int x = event->x - UI.main_text.x;
-		int y = event->y - UI.main_text.y;
-
-		int my = UI.main_text.h - y;
-
-		int row = my / ( Style.font.height + SPACING );
-		int col = x / Style.font.width;
-
-		UI.main_text.selection_end_col = col;
-		UI.main_text.selection_end_row = row;
-
-		textbox_draw( &UI.main_text );
-	}
-
-	if( UI.chat_text.selecting ) {
-		int x = event->x - UI.chat_text.x;
-		int y = event->y - UI.chat_text.y;
-
-		int my = UI.chat_text.h - y;
-
-		int row = my / ( Style.font.height + SPACING );
-		int col = x / Style.font.width;
-
-		UI.chat_text.selection_end_col = col;
-		UI.chat_text.selection_end_row = row;
-
-		textbox_draw( &UI.chat_text );
-	}
+static void event_mouse_up( XEvent * xevent ) {
+	ui_mouse_up( xevent->xbutton.x, xevent->xbutton.y );
 }
 
 static void event_message( XEvent * xevent ) {
@@ -522,40 +215,27 @@ static void event_message( XEvent * xevent ) {
 }
 
 static void event_resize( XEvent * xevent ) {
-	int old_width = UI.width;
-	int old_height = UI.height;
-
-	UI.width = xevent->xconfigure.width;
-	UI.height = xevent->xconfigure.height;
-
-	if( UI.width == old_width && UI.height == old_height )
-		return;
+	int width = xevent->xconfigure.width;
+	int height = xevent->xconfigure.height;
 
 	int old_max_width = UI.max_width;
 	int old_max_height = UI.max_height;
 
-	UI.max_width = max( UI.max_width, UI.width );
-	UI.max_height = max( UI.max_height, UI.height );
+	UI.max_width = max( UI.max_width, width );
+	UI.max_height = max( UI.max_height, height );
 
 	if( UI.max_width != old_max_width || UI.max_height != old_max_height ) {
-		if( old_width != -1 ) {
+		if( old_max_width != -1 ) {
 			XFreePixmap( UI.display, UI.back_buffer );
 		}
 		UI.back_buffer = XCreatePixmap( UI.display, UI.window, UI.max_width, UI.max_height, UI.depth );
 	}
 
-	textbox_set_pos( &UI.chat_text, PADDING, PADDING );
-	textbox_set_size( &UI.chat_text, UI.width - ( 2 * PADDING ), ( Style.font.height + SPACING ) * CHAT_ROWS );
-
-	textbox_set_pos( &UI.main_text, PADDING, ( PADDING * 2 ) + CHAT_ROWS * ( Style.font.height + SPACING ) + 1 );
-	textbox_set_size( &UI.main_text, UI.width - ( 2 * PADDING ), UI.height
-		- ( ( ( Style.font.height + SPACING ) * CHAT_ROWS ) + ( PADDING * 2 ) )
-		- ( ( Style.font.height * 2 ) + ( PADDING * 5 ) ) - 1
-	);
+	ui_resize( width, height );
 }
 
 static void event_expose( XEvent * xevent ) {
-	ui_draw();
+	ui_redraw_everything();
 }
 
 static void event_key_press( XEvent * xevent ) {
@@ -582,53 +262,44 @@ static void event_key_press( XEvent * xevent ) {
 	switch( key ) {
 		case XK_Return:
 			input_return();
-			draw_input();
 			break;
 
 		case XK_BackSpace:
 			input_backspace();
-			draw_input();
 			break;
 
 		case XK_Delete:
 			input_delete();
-			draw_input();
 			break;
 
 		case XK_Page_Up:
 			if( shift )
-				textbox_scroll( &UI.main_text, 1 );
+				ui_scroll( 1 );
 			else
-				textbox_page_up( &UI.main_text );
-			textbox_draw( &UI.main_text );
+				ui_page_up();
 			break;
 
 		case XK_Page_Down:
 			if( shift )
-				textbox_scroll( &UI.main_text, -1 );
+				ui_scroll( -1 );
 			else
-				textbox_page_down( &UI.main_text );
-			textbox_draw( &UI.main_text );
+				ui_page_down();
 			break;
 
 		case XK_Up:
 			input_up();
-			draw_input();
 			break;
 
 		case XK_Down:
 			input_down();
-			draw_input();
 			break;
 
 		case XK_Left:
 			input_left();
-			draw_input();
 			break;
 
 		case XK_Right:
 			input_right();
-			draw_input();
 			break;
 
 		ADD_MACRO( XK_KP_1, "kp1" );
@@ -688,7 +359,6 @@ static void event_key_press( XEvent * xevent ) {
 			}
 			else if( len > 0 ) {
 				input_add( keyBuffer, len );
-				draw_input();
 			}
 
 			break;
@@ -713,8 +383,8 @@ static void event_focus( XEvent * xevent ) {
 void ui_handleXEvents() {
 	void ( *event_handlers[ LASTEvent ] )( XEvent * ) = { };
 	event_handlers[ ButtonPress ] = event_mouse_down;
-	event_handlers[ ButtonRelease ] = event_mouse_up;
 	event_handlers[ MotionNotify ] = event_mouse_move;
+	event_handlers[ ButtonRelease ] = event_mouse_up;
 	event_handlers[ ClientMessage ] = event_message;
 	event_handlers[ ConfigureNotify ] = event_resize;
 	event_handlers[ Expose ] = event_expose;
@@ -744,10 +414,7 @@ void ui_handleXEvents() {
 			}
 		}
 
-		if( UI.main_text.dirty )
-			textbox_draw( &UI.main_text );
-		if( UI.chat_text.dirty )
-			textbox_draw( &UI.chat_text );
+		ui_redraw_dirty();
 
 		if( UI.dirty ) {
 			XCopyArea( UI.display, UI.back_buffer, UI.window, UI.gc, UI.dirty_left, UI.dirty_top, UI.dirty_right - UI.dirty_left, UI.dirty_bottom - UI.dirty_top, UI.dirty_left, UI.dirty_top );
@@ -808,7 +475,7 @@ static void initStyle() {
 	Style.font = load_font( "-windows-dina-medium-r-normal--10-*-*-*-c-0-*-*", "-windows-dina-bold-r-normal--10-*-*-*-c-0-*-*" );
 }
 
-void ui_init() {
+void platform_ui_init() {
 	for( Socket & s : sockets ) {
 		s.in_use = false;
 	}
@@ -818,21 +485,15 @@ void ui_init() {
 
 	UI = { };
 
-	textbox_init( &UI.main_text, SCROLLBACK_SIZE );
-	textbox_init( &UI.chat_text, CHAT_ROWS );
 	UI.display = XOpenDisplay( NULL );
 	UI.screen = XDefaultScreen( UI.display );
-	UI.width = -1;
-	UI.height = -1;
+	UI.max_width = -1;
+	UI.max_height = -1;
 
 	Window root = XRootWindow( UI.display, UI.screen );
 	UI.depth = XDefaultDepth( UI.display, UI.screen );
 	Visual * visual = XDefaultVisual( UI.display, UI.screen );
 	UI.colorMap = XDefaultColormap( UI.display, UI.screen );
-
-	statusContents = ( StatusChar * ) malloc( statusCapacity * sizeof( StatusChar ) );
-	if( statusContents == NULL )
-		err( 1, "malloc" );
 
 	initStyle();
 
@@ -864,22 +525,6 @@ void ui_init() {
 	ui_handleXEvents();
 }
 
-void ui_main_newline() {
-	textbox_newline( &UI.main_text );
-}
-
-void ui_main_print( const char * str, size_t len, Colour fg, Colour bg, bool bold ) {
-	textbox_add( &UI.main_text, str, len, fg, bg, bold );
-}
-
-void ui_chat_newline() {
-	textbox_newline( &UI.chat_text );
-}
-
-void ui_chat_print( const char * str, size_t len, Colour fg, Colour bg, bool bold ) {
-	textbox_add( &UI.chat_text, str, len, fg, bg, bold );
-}
-
 void ui_urgent() {
 	if( !UI.has_focus ) {
                 XWMHints * hints = XGetWMHints( UI.display, UI.window );
@@ -903,11 +548,7 @@ bool ui_set_font( const char * name, int size ) {
 	return false;
 }
 
-void ui_term() {
-	textbox_destroy( &UI.main_text );
-	textbox_destroy( &UI.chat_text );
-	free( statusContents );
-
+void platform_ui_term() {
 	XFreeFont( UI.display, Style.font.regular );
 	XFreeFont( UI.display, Style.font.bold );
 

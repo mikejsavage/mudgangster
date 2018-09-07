@@ -7,7 +7,7 @@ struct sockaddr_storage;
 
 static NetAddress sockaddr_to_netaddress( const struct sockaddr_storage & ss );
 static struct sockaddr_storage netaddress_to_sockaddr( const NetAddress & addr );
-static void setsockoptone( OSSocket fd, int level, int opt );
+static void setsockoptone( PlatformSocket fd, int level, int opt );
 
 #if PLATFORM_WINDOWS
 #include "win32_network.cc"
@@ -70,7 +70,7 @@ static struct sockaddr_storage netaddress_to_sockaddr( const NetAddress & addr )
 	return ss;
 }
 
-static void setsockoptone( OSSocket fd, int level, int opt ) {
+static void setsockoptone( PlatformSocket fd, int level, int opt ) {
 	int one = 1;
 	int ok = setsockopt( fd, level, opt, ( char * ) &one, sizeof( one ) );
 	if( ok == -1 ) {

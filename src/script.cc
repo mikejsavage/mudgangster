@@ -192,8 +192,6 @@ extern "C" int mud_setStatus( lua_State * L ) {
 		lua_pop( L, 4 );
 	}
 
-	ui_draw_status();
-
 	return 0;
 }
 

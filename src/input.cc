@@ -45,7 +45,7 @@ void input_return() {
 	if( inputLen > 0 ) {
 		InputHistory * lastCmd = &inputHistory[ ( inputHistoryHead + inputHistoryCount - 1 ) % MAX_INPUT_HISTORY ];
 
-		if( inputLen != lastCmd->len || strncmp( inputBuffer, lastCmd->text, inputLen ) != 0 ) {
+		if( inputHistoryCount == 0 || inputLen != lastCmd->len || strncmp( inputBuffer, lastCmd->text, inputLen ) != 0 ) {
 			int pos = ( inputHistoryHead + inputHistoryCount ) % MAX_INPUT_HISTORY;
 
 			if( inputHistoryCount == MAX_INPUT_HISTORY ) {

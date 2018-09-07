@@ -7,7 +7,10 @@ local function doIntervals()
 		local event = Intervals[ i ]
 
 		if event.enabled then
-			event:checkTick( now )
+			local ok, err = xpcall( event.checkTick, debug.traceback, event, now )
+			if not ok then
+				mud.print( "\n#s> interval callback failed: %s" % err )
+			end
 		end
 	end
 end

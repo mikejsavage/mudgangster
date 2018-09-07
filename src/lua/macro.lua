@@ -4,7 +4,10 @@ local function doMacro( key )
 	local macro = Macros[ key ]
 
 	if macro then
-		macro()
+		local ok, err = xpcall( macro, debug.traceback )
+		if not ok then
+			mud.print( "\n#s> macro callback failed: %s" % err )
+		end
 	end
 end
 

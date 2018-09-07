@@ -3,7 +3,7 @@
 #include "ui.h"
 
 constexpr size_t MAX_LINE_LENGTH = 2048;
-constexpr size_t SCROLLBACK_SIZE = 1 << 16;
+constexpr size_t SCROLLBACK_SIZE = 1 << 14;
 
 struct TextBox {
 	struct Glyph {

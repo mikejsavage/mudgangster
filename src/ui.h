@@ -25,11 +25,8 @@ void ui_draw_status();
 void ui_clear_status();
 void ui_statusAdd( char c, Colour fg, bool bold );
 
-void ui_main_draw();
 void ui_main_newline();
 void ui_main_print( const char * str, size_t len, Colour fg, Colour bg, bool bold );
-
-void ui_chat_draw();
 void ui_chat_newline();
 void ui_chat_print( const char * str, size_t len, Colour fg, Colour bg, bool bold );
 

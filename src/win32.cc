@@ -403,20 +403,12 @@ void ui_draw() {
 
 void ui_handleXEvents() { }
 
-void ui_main_draw() {
-	textbox_draw( &UI.main_text );
-}
-
 void ui_main_newline() {
 	textbox_newline( &UI.main_text );
 }
 
 void ui_main_print( const char * str, size_t len, Colour fg, Colour bg, bool bold ) {
 	textbox_add( &UI.main_text, str, len, fg, bg, bold );
-}
-
-void ui_chat_draw() {
-	textbox_draw( &UI.chat_text );
 }
 
 void ui_chat_newline() {
@@ -735,6 +727,12 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 		default:
 			return DefWindowProc(hwnd, msg, wParam, lParam);
 	}
+
+	if( UI.main_text.dirty )
+		textbox_draw( &UI.main_text );
+	if( UI.chat_text.dirty )
+		textbox_draw( &UI.chat_text );
+
 	return 0;
 }
 

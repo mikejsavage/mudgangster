@@ -864,20 +864,12 @@ void ui_init() {
 	ui_handleXEvents();
 }
 
-void ui_main_draw() {
-	textbox_draw( &UI.main_text );
-}
-
 void ui_main_newline() {
 	textbox_newline( &UI.main_text );
 }
 
 void ui_main_print( const char * str, size_t len, Colour fg, Colour bg, bool bold ) {
 	textbox_add( &UI.main_text, str, len, fg, bg, bold );
-}
-
-void ui_chat_draw() {
-	textbox_draw( &UI.chat_text );
 }
 
 void ui_chat_newline() {

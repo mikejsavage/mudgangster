@@ -4,6 +4,7 @@
 #include "common.h"
 
 #if PLATFORM_WINDOWS
+#include <winsock2.h>
 typedef SOCKET OSSocket;
 #elif PLATFORM_UNIX
 typedef int OSSocket;

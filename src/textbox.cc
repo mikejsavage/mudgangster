@@ -4,6 +4,12 @@
 #include "textbox.h"
 #include "ui.h"
 
+#if PLATFORM_WINDOWS
+#define NEWLINE_STRING "\r\n"
+#else
+#define NEWLINE_STRING "\n"
+#endif
+
 static uint8_t pack_style( Colour fg, Colour bg, bool bold ) {
 	STATIC_ASSERT( NUM_COLOURS * NUM_COLOURS * 2 < UINT8_MAX );
 
@@ -140,7 +146,95 @@ void textbox_mouse_up( TextBox * tb, int window_x, int window_y ) {
 	if( !tb->selecting )
 		return;
 
-	// TODO: copy the text
+	int fw, fh;
+	ui_get_font_size( &fw, &fh );
+
+	size_t tb_cols = tb->w / fw;
+
+	// convert mouse start/end points to ordered start/end points
+	int start_row = tb->selection_start_row;
+	int end_row = tb->selection_end_row;
+	int start_col = tb->selection_start_col;
+	int end_col = tb->selection_end_col;
+	if( tb->selection_start_row == tb->selection_end_row ) {
+		start_col = min( tb->selection_start_col, tb->selection_end_col );
+		end_col = max( tb->selection_start_col, tb->selection_end_col );
+	}
+	else if( tb->selection_start_row < tb->selection_end_row ) {
+		swap( start_row, end_row );
+		swap( start_col, end_col );
+	}
+
+	// find what the start/end lines/offsets are
+	// TODO: this is incorrect when wrapping...
+	int end_line = 0;
+	int rows = 0;
+
+	while( rows < end_row ) {
+		const TextBox::Line & line = tb->lines[ ( tb->head + tb->num_lines - tb->scroll_offset - end_line ) % tb->max_lines ];
+		int line_rows = 1 + line.len / tb_cols;
+		if( line.len > 0 && line.len % tb_cols == 0 )
+			line_rows--;
+		rows += line_rows;
+		end_line++;
+	}
+
+	size_t end_line_offset = ( rows - end_row ) * tb_cols + end_col + 1;
+	int start_line = end_line;
+
+	while( rows < start_row ) {
+		const TextBox::Line & line = tb->lines[ ( tb->head + tb->num_lines - tb->scroll_offset - start_line ) % tb->max_lines ];
+		int line_rows = 1 + line.len / tb_cols;
+		if( line.len > 0 && line.len % tb_cols == 0 )
+			line_rows--;
+		rows += line_rows;
+		start_line++;
+	}
+
+	size_t start_line_offset = ( rows - start_row ) * tb_cols + start_col;
+
+	// first pass to get the length of the selected string
+	size_t selected_length = 1; // include space for \0
+	for( int i = start_line; i >= end_line; i-- ) {
+		const TextBox::Line & line = tb->lines[ ( tb->head + tb->num_lines - tb->scroll_offset - i ) % tb->max_lines ];
+		size_t start_offset = i == start_line ? start_line_offset : 0;
+		size_t end_offset = i == end_line ? end_line_offset : line.len;
+		printf( "%d: %zu-%zu\n", i, start_offset, end_offset );
+		// TODO: iterate over glyphs to see when ansi codes need inserting
+		if( start_offset <= line.len ) {
+			selected_length += min( line.len, end_offset ) - start_offset;
+		}
+		if( i != end_line ) {
+			selected_length += sizeof( NEWLINE_STRING ) - 1;
+		}
+	}
+
+	printf( "%d+%zu to %d+%zu\n", start_line, start_line_offset, end_line, end_line_offset );
+	printf( "%zu chars\n", selected_length );
+
+	char * selected = ( char * ) malloc( selected_length );
+	selected[ selected_length - 1 ] = '\0';
+
+	// second pass to copy the selection out
+	size_t n = 0;
+	for( int i = start_line; i >= end_line; i-- ) {
+		const TextBox::Line & line = tb->lines[ ( tb->head + tb->num_lines - tb->scroll_offset - i ) % tb->max_lines ];
+		size_t start_offset = i == start_line ? start_line_offset : 0;
+		size_t end_offset = i == end_line ? end_line_offset : line.len;
+		size_t len = min( line.len, end_offset ) - start_offset;
+		// TODO: insert ansi codes when style changes
+		for( size_t j = 0; j < len; j++ ) {
+			selected[ n ] = line.glyphs[ j + start_offset ].ch;
+			n++;
+		}
+		if( i != end_line ) {
+			memcpy( selected + n, NEWLINE_STRING, sizeof( NEWLINE_STRING ) - 1 );
+			n += sizeof( NEWLINE_STRING ) - 1;
+		}
+	}
+
+	printf( "%s\n", selected );
+	free( selected );
 
 	tb->selecting = false;
 	tb->dirty = true;
@@ -157,16 +251,17 @@ void textbox_set_size( TextBox * tb, int w, int h ) {
 }
 
 static bool inside_selection( int col, int row, int start_col, int start_row, int end_col, int end_row ) {
-	int min_col = min( start_col, end_col );
 	int min_row = min( start_row, end_row );
-	int max_col = max( start_col, end_col );
 	int max_row = max( start_row, end_row );
 
 	if( row < min_row || row > max_row )
 		return false;
 
-	if( start_row == end_row )
+	if( start_row == end_row ) {
+		int min_col = min( start_col, end_col );
+		int max_col = max( start_col, end_col );
 		return col >= min_col && col <= max_col;
+	}
 
 	if( row > min_row && row < max_row )
 		return true;

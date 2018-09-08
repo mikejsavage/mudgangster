@@ -170,7 +170,7 @@ void textbox_mouse_up( TextBox * tb, int window_x, int window_y ) {
 	int end_line = 0;
 	int rows = 0;
 
-	while( rows < end_row ) {
+	while( rows < end_row && end_line < tb->num_lines ) {
 		const TextBox::Line & line = tb->lines[ ( tb->head + tb->num_lines - tb->scroll_offset - end_line ) % tb->max_lines ];
 		int line_rows = 1 + line.len / tb_cols;
 		if( line.len > 0 && line.len % tb_cols == 0 )
@@ -179,10 +179,13 @@ void textbox_mouse_up( TextBox * tb, int window_x, int window_y ) {
 		end_line++;
 	}
 
+	if( end_line == tb->num_lines )
+		return;
+
 	size_t end_line_offset = ( rows - end_row ) * tb_cols + end_col + 1;
 	int start_line = end_line;
 
-	while( rows < start_row ) {
+	while( rows < start_row && start_line < tb->num_lines ) {
 		const TextBox::Line & line = tb->lines[ ( tb->head + tb->num_lines - tb->scroll_offset - start_line ) % tb->max_lines ];
 		int line_rows = 1 + line.len / tb_cols;
 		if( line.len > 0 && line.len % tb_cols == 0 )
@@ -192,6 +195,10 @@ void textbox_mouse_up( TextBox * tb, int window_x, int window_y ) {
 	}
 
 	size_t start_line_offset = ( rows - start_row ) * tb_cols + start_col;
+	if( start_line == tb->num_lines ) {
+		start_line--;
+		start_line_offset = 0;
+	}
 
 	// first pass to get the length of the selected string
 	size_t selected_length = 1; // include space for \0
@@ -221,11 +228,13 @@ void textbox_mouse_up( TextBox * tb, int window_x, int window_y ) {
 		const TextBox::Line & line = tb->lines[ ( tb->head + tb->num_lines - tb->scroll_offset - i ) % tb->max_lines ];
 		size_t start_offset = i == start_line ? start_line_offset : 0;
 		size_t end_offset = i == end_line ? end_line_offset : line.len;
-		size_t len = min( line.len, end_offset ) - start_offset;
-		// TODO: insert ansi codes when style changes
-		for( size_t j = 0; j < len; j++ ) {
-			selected[ n ] = line.glyphs[ j + start_offset ].ch;
-			n++;
+		if( start_offset <= line.len ) {
+			size_t len = min( line.len, end_offset ) - start_offset;
+			// TODO: insert ansi codes when style changes
+			for( size_t j = 0; j < len; j++ ) {
+				selected[ n ] = line.glyphs[ j + start_offset ].ch;
+				n++;
+			}
 		}
 		if( i != end_line ) {
 			memcpy( selected + n, NEWLINE_STRING, sizeof( NEWLINE_STRING ) - 1 );

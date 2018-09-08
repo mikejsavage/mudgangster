@@ -219,7 +219,7 @@ bool ui_set_font( const char * name, int size ) {
 }
 
 void platform_set_clipboard( const char * str, size_t len ) {
-	if( OpenClipboard( UI.hwnd ) == FALSE )
+	if( OpenClipboard( NULL ) == FALSE )
 		return;
 
 	HGLOBAL mem = GlobalAlloc( GMEM_MOVEABLE, len );
@@ -428,7 +428,15 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 					if( c == 0 )
 						break;
 					c = tolower( c );
-					if( ctrl || alt ) {
+					if( ctrl && c == 'v' && !shift && !alt ) {
+						if( OpenClipboard( NULL ) == TRUE ) {
+							const char * clipboard = ( const char * ) GetClipboardData( CF_TEXT );
+							if( clipboard != NULL )
+								input_add( clipboard, strlen( clipboard ) );
+							CloseClipboard();
+						}
+					}
+					else if( ctrl || alt ) {
 						script_doMacro( &c, 1, shift, ctrl, alt );
 					}
 				} break;

@@ -214,6 +214,7 @@ bool ui_set_font( const char * name, int size ) {
 	Style.font.width = metrics.tmAveCharWidth;
 	Style.font.ascent = metrics.tmAscent;
 
+	ui_update_layout();
 	ui_redraw_everything();
 
 	return true;

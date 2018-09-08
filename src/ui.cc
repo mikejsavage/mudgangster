@@ -282,18 +282,9 @@ void ui_chat_print( const char * str, size_t len, Colour fg, Colour bg, bool bol
 	textbox_add( &chat_text, str, len, fg, bg, bold );
 }
 
-void ui_resize( int width, int height ) {
+void ui_update_layout() {
 	int fw, fh;
 	ui_get_font_size( &fw, &fh );
-
-	int old_width = window_width;
-	int old_height = window_height;
-
-	window_width = width;
-	window_height = height;
-
-	if( window_width == old_width && window_height == old_height )
-		return;
 
 	textbox_set_pos( &chat_text, PADDING, PADDING );
 	textbox_set_size( &chat_text, window_width - ( 2 * PADDING ), ( fh + SPACING ) * CHAT_ROWS );
@@ -306,6 +297,19 @@ void ui_resize( int width, int height ) {
 
 	input_set_pos( PADDING, window_height - PADDING - fh );
 	input_set_size( window_width - PADDING * 2, fh );
+}
+
+void ui_resize( int width, int height ) {
+	int old_width = window_width;
+	int old_height = window_height;
+
+	window_width = width;
+	window_height = height;
+
+	if( window_width == old_width && window_height == old_height )
+		return;
+
+	ui_update_layout();
 }
 
 void ui_scroll( int offset ) {

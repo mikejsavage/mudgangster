@@ -36,6 +36,7 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool for
 void ui_redraw_dirty();
 void ui_redraw_everything();
 
+void ui_update_layout();
 void ui_resize( int width, int height );
 
 void ui_scroll( int offset );

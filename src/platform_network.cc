@@ -78,6 +78,11 @@ static void setsockoptone( PlatformSocket fd, int level, int opt ) {
 	}
 }
 
+#if PLATFORM_WINDOWS
+// TODO: horrible
+char last_error_str[ 1024 ];
+#endif
+
 bool net_new_tcp( TCPSocket * sock, const NetAddress & addr, const char ** err ) {
 	struct sockaddr_storage ss = netaddress_to_sockaddr( addr );
 	socklen_t ss_size = sockaddr_size( ss );
@@ -91,7 +96,17 @@ bool net_new_tcp( TCPSocket * sock, const NetAddress & addr, const char ** err )
 		int ok_close = closesocket( sock->fd );
 		if( ok_close == -1 )
 			FATAL( "closesocket" );
-		*err = strerror( errno );
+		if( err != NULL ) {
+#if PLATFORM_WINDOWS
+			int error = GetLastError();
+			FormatMessageA( FORMAT_MESSAGE_FROM_SYSTEM, NULL, error,
+				MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ), last_error_str, sizeof( last_error_str ), NULL );
+
+			*err = last_error_str;
+#else
+			*err = strerror( errno );
+#endif
+		}
 		// TODO: check for actual coding errors too
 		return false;
 	}

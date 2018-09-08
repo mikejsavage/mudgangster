@@ -93,12 +93,9 @@ bool net_new_tcp( TCPSocket * sock, const NetAddress & addr, const char ** err )
 
 	int ok = connect( sock->fd, ( const sockaddr * ) &ss, ss_size );
 	if( ok == -1 ) {
-		int ok_close = closesocket( sock->fd );
-		if( ok_close == -1 )
-			FATAL( "closesocket" );
 		if( err != NULL ) {
 #if PLATFORM_WINDOWS
-			int error = GetLastError();
+			int error = WSAGetLastError();
 			FormatMessageA( FORMAT_MESSAGE_FROM_SYSTEM, NULL, error,
 				MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ), last_error_str, sizeof( last_error_str ), NULL );
 
@@ -107,6 +104,9 @@ bool net_new_tcp( TCPSocket * sock, const NetAddress & addr, const char ** err )
 			*err = strerror( errno );
 #endif
 		}
+		int ok_close = closesocket( sock->fd );
+		if( ok_close == -1 )
+			FATAL( "closesocket" );
 		// TODO: check for actual coding errors too
 		return false;
 	}

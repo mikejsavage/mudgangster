@@ -42,7 +42,7 @@ bool operator!=( const NetAddress & lhs, const NetAddress & rhs );
 void net_init();
 void net_term();
 
-bool net_new_tcp( TCPSocket * sock, const NetAddress & addr );
+bool net_new_tcp( TCPSocket * sock, const NetAddress & addr, const char ** err );
 bool net_send( TCPSocket sock, const void * data, size_t len );
 TCPRecvResult net_recv( TCPSocket sock, void * buf, size_t buf_size, size_t * bytes_read );
 void net_destroy( TCPSocket * sock );

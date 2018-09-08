@@ -51,11 +51,9 @@ void * platform_connect( const char ** err, const char * host, int port ) {
 	addr.port = checked_cast< u16 >( port );
 
 	TCPSocket sock;
-	bool ok = net_new_tcp( &sock, addr );
-	if( !ok ) {
-		*err = "net_new_tcp";
+	bool ok = net_new_tcp( &sock, addr, err );
+	if( !ok )
 		return NULL;
-	}
 
 	sockets[ idx ].sock = sock;
 	sockets[ idx ].in_use = true;
@@ -545,6 +543,10 @@ void ui_get_font_size( int * fw, int * fh ) {
 bool ui_set_font( const char * name, int size ) {
 	// TODO
 	return false;
+}
+
+void platform_set_clipboard( const char * str, size_t len ) {
+	// TODO
 }
 
 void platform_ui_term() {

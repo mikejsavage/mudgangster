@@ -58,11 +58,9 @@ void * platform_connect( const char ** err, const char * host, int port ) {
 	addr.port = checked_cast< u16 >( port );
 
 	TCPSocket sock;
-	bool ok = net_new_tcp( &sock, addr );
-	if( !ok ) {
-		*err = "net_new_tcp";
+	bool ok = net_new_tcp( &sock, addr, err );
+	if( !ok )
 		return NULL;
-	}
 
 	sockets[ idx ].sock = sock;
 	sockets[ idx ].in_use = true;

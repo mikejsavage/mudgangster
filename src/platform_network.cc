@@ -78,21 +78,20 @@ static void setsockoptone( PlatformSocket fd, int level, int opt ) {
 	}
 }
 
-bool net_new_tcp( TCPSocket * sock, const NetAddress & addr ) {
+bool net_new_tcp( TCPSocket * sock, const NetAddress & addr, const char ** err ) {
 	struct sockaddr_storage ss = netaddress_to_sockaddr( addr );
 	socklen_t ss_size = sockaddr_size( ss );
 
 	sock->fd = socket( ss.ss_family, SOCK_STREAM, IPPROTO_TCP );
-	if( sock->fd == INVALID_SOCKET ) {
+	if( sock->fd == INVALID_SOCKET )
 		FATAL( "socket" );
-	}
 
 	int ok = connect( sock->fd, ( const sockaddr * ) &ss, ss_size );
 	if( ok == -1 ) {
 		int ok_close = closesocket( sock->fd );
-		if( ok_close == -1 ) {
+		if( ok_close == -1 )
 			FATAL( "closesocket" );
-		}
+		*err = strerror( errno );
 		// TODO: check for actual coding errors too
 		return false;
 	}

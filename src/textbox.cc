@@ -34,6 +34,7 @@ static void unpack_style( uint8_t style, int * fg, int * bg, int * bold ) {
 
 void textbox_init( TextBox * tb, size_t scrollback ) {
 	// TODO: this is kinda crap
+	*tb = { };
 	tb->lines = ( TextBox::Line * ) calloc( sizeof( TextBox::Line ), scrollback );
 	tb->num_lines = 1;
 	tb->max_lines = scrollback;
@@ -69,7 +70,8 @@ void textbox_newline( TextBox * tb ) {
 	}
 
 	tb->head++;
-	tb->scroll_offset = min( tb->scroll_offset + 1, tb->num_lines - 1 );
+	if( tb->scroll_offset > 0 )
+		tb->scroll_offset = min( tb->scroll_offset + 1, tb->num_lines - 1 );
 	tb->dirty = true;
 
 	TextBox::Line * line = &tb->lines[ ( tb->head + tb->num_lines ) % tb->max_lines ];

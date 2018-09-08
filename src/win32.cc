@@ -220,6 +220,28 @@ bool ui_set_font( const char * name, int size ) {
 	return true;
 }
 
+void platform_set_clipboard( const char * str, size_t len ) {
+	if( OpenClipboard( UI.hwnd ) == FALSE )
+		return;
+
+	HGLOBAL mem = GlobalAlloc( GMEM_MOVEABLE, len );
+	if( mem == NULL ) {
+		CloseClipboard();
+		return;
+	}
+
+	void * p = GlobalLock( mem );
+	if( p == NULL )
+		FATAL( "GlobalLock" );
+
+	memcpy( p, str, len );
+	GlobalUnlock( mem );
+
+	EmptyClipboard();
+	SetClipboardData( CF_TEXT, mem );
+	CloseClipboard();
+}
+
 LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 	switch( msg ) {
 		case WM_CREATE: {

@@ -3,6 +3,8 @@
 #include "common.h"
 #include "textbox.h"
 #include "ui.h"
+#include "platform.h"
+#include "platform_ui.h"
 
 #if PLATFORM_WINDOWS
 #define NEWLINE_STRING "\r\n"
@@ -244,7 +246,7 @@ void textbox_mouse_up( TextBox * tb, int window_x, int window_y ) {
 		}
 	}
 
-	printf( "%s\n", selected );
+	platform_set_clipboard( selected, selected_length );
 	free( selected );
 
 	tb->selecting = false;

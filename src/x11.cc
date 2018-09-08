@@ -9,7 +9,7 @@
 #include "common.h"
 #include "input.h"
 #include "script.h"
-#include "textbox.h"
+#include "ui.h"
 
 #include "platform_network.h"
 

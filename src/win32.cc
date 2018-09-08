@@ -6,7 +6,7 @@
 #include "common.h"
 #include "input.h"
 #include "script.h"
-#include "textbox.h"
+#include "ui.h"
 
 #include "platform_network.h"
 
@@ -18,9 +18,6 @@ struct {
 
 	HDC back_buffer;
 	HBITMAP back_buffer_bitmap;
-
-	TextBox main_text;
-	TextBox chat_text;
 
 	int max_width, max_height;
 } UI;

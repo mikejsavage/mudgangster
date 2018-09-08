@@ -259,8 +259,8 @@ void ui_redraw_everything() {
 	input_draw();
 	ui_draw_status();
 
-	textbox_draw( &chat_text );
 	textbox_draw( &main_text );
+	textbox_draw( &chat_text );
 
 	int spacerY = ( 2 * PADDING ) + ( fh + SPACING ) * CHAT_ROWS;
 	ui_fill_rect( 0, spacerY, window_width, 1, COLOUR_STATUSBG, false );

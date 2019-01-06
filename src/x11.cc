@@ -591,27 +591,24 @@ void event_loop() {
 		if( ok == -1 )
 			FATAL( "poll" );
 
-		if( ok == 0 ) {
-			script_fire_intervals();
-		}
-		else {
-			for( size_t i = 1; i < ARRAY_COUNT( fds ); i++ ) {
-				if( fds[ i ].revents & POLLIN ) {
-					Socket * sock = socket_from_fd( fds[ i ].fd );
-					assert( sock != NULL );
+		script_fire_intervals();
 
-					char buf[ 8192 ];
-					size_t n;
-					TCPRecvResult res = net_recv( sock->sock, buf, sizeof( buf ), &n );
-					if( res == TCP_OK ) {
-						script_socketData( sock, buf, n );
-					}
-					else if( res == TCP_CLOSED ) {
-						script_socketData( sock, NULL, 0 );
-					}
-					else {
-						FATAL( "net_recv" );
-					}
+		for( size_t i = 1; i < ARRAY_COUNT( fds ); i++ ) {
+			if( fds[ i ].revents & POLLIN ) {
+				Socket * sock = socket_from_fd( fds[ i ].fd );
+				assert( sock != NULL );
+
+				char buf[ 8192 ];
+				size_t n;
+				TCPRecvResult res = net_recv( sock->sock, buf, sizeof( buf ), &n );
+				if( res == TCP_OK ) {
+					script_socketData( sock, buf, n );
+				}
+				else if( res == TCP_CLOSED ) {
+					script_socketData( sock, NULL, 0 );
+				}
+				else {
+					FATAL( "net_recv" );
 				}
 			}
 		}

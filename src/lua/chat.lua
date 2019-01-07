@@ -171,7 +171,7 @@ mud.alias( "/hang", {
 } )
 
 local function sendPM( client, message )
-	local named = "\nHirve chats to you, '" .. message .. "'"
+	local named = "\n" .. chat_name .. " chats to you, '" .. message .. "'"
 	local data = CommandBytes.pm .. named .. "\n\255"
 
 	socket.send( client.socket, data )

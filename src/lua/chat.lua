@@ -29,11 +29,10 @@ end
 
 local function dataCoro( client )
 	local data = coroutine.yield()
-	local name = data:match( "^YES:(.+)\n$" )
+	local name, handshakeLen = data:match( "^YES:(.+)\n()" )
 
 	if not name then
-		client.socket:shutdown()
-
+		client:kill()
 		return
 	end
 
@@ -42,11 +41,9 @@ local function dataCoro( client )
 
 	mud.print( "\n#s> Connected to %s@%s:%s", client.name, client.address, client.port )
 
-	local dataBuffer = ""
+	local dataBuffer = data:sub( handshakeLen )
 
 	while true do
-		dataBuffer = dataBuffer .. coroutine.yield()
-
 		dataBuffer = dataBuffer:gsub( "(.)(.-)\255", function( command, args )
 			if command == CommandBytes.all or command == CommandBytes.pm or command == CommandBytes.message then
 				local message = args:match( "^\n*(.-)\n*$" )
@@ -56,6 +53,7 @@ local function dataCoro( client )
 
 			return ""
 		end )
+		dataBuffer = dataBuffer .. coroutine.yield()
 	end
 end
 
@@ -63,6 +61,7 @@ local Client = { }
 
 function Client:new( sock, address, port )
 	local client = {
+		name = address .. ":" .. port,
 		socket = sock,
 
 		address = address,

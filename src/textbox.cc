@@ -296,7 +296,7 @@ static bool inside_selection( int col, int row, int start_col, int start_row, in
 }
 
 void textbox_draw( TextBox * tb ) {
-	if( tb->w == 0 || tb->h == 0 )
+	if( tb->w <= 0 || tb->h <= 0 )
 		return;
 
 	ui_fill_rect( tb->x, tb->y, tb->w, tb->h, COLOUR_BG, false );

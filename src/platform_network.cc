@@ -112,6 +112,7 @@ bool net_new_tcp( TCPSocket * sock, const NetAddress & addr, const char ** err )
 	}
 
 	setsockoptone( sock->fd, SOL_SOCKET, SO_KEEPALIVE );
+	setsockoptone( sock->fd, IPPROTO_TCP, TCP_NODELAY );
 
 	platform_init_sock( sock->fd );
 

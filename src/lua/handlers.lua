@@ -197,7 +197,7 @@ local function handleData( data )
 				end
 
 				for opt in opts:gmatch( "([^;]+)" ) do
-					if Escapes[ escape ][ opt ] then
+					if Escapes[ escape ] and Escapes[ escape ][ opt ] then
 						Escapes[ escape ][ opt ]()
 					end
 				end

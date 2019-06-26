@@ -90,7 +90,7 @@ configs[ "openbsd-release" ] = {
 local function identify_host()
 	local dll_ext = package.cpath:match( "(%a+)$" )
 
-	if dll_ext == "dll" then
+	if dll_ext == "dll" or os.getenv( "WSLENV" ) then
 		return "windows", "64"
 	end
 
@@ -200,7 +200,7 @@ function rc( rc_name )
 		printf( "%s/%s%s: %s.rc %s.xml", dir, rc_name, obj_suffix, rc_name, rc_name )
 		printf( "\t@printf \"\\033[1;33mbuilding $@\\033[0m\\n\"" )
 		printf( "\t@mkdir -p \"$(@D)\"" )
-		printf( "\t@rc /fo$@ /nologo $<" )
+		printf( "\t@rc.exe /fo$@ /nologo $<" )
 	else
 		local cxx = rightmost( "cxx" )
 		printf( "%s/%s%s:", dir, rc_name, obj_suffix )
@@ -264,25 +264,25 @@ printf( [[
 $(BINS): %%:
 	@printf "\033[1;31mbuilding $@\033[0m\n"
 	@mkdir -p "$(@D)"
-	@cl -Fe$@ $^ $(LDFLAGS)
+	@cl.exe -Fe$@ $^ $(LDFLAGS)
 ]] )
 printf( [[
 %s/%%%s: %%.cc
 	@printf "\033[1;32mbuilding $<\033[0m\n"
 	@mkdir -p "$(@D)"
-	@cl $(CXXFLAGS) -Fo$@ $^
+	@cl.exe $(CXXFLAGS) -Fo$@ $^
 ]], dir, obj_suffix )
 printf( [[
 $(OBJS): %%:
 	@printf "\033[1;32mbuilding $<\033[0m\n"
 	@mkdir -p "$(@D)"
-	@cl $(CXXFLAGS) -Fo$@ -Tp$<
+	@cl.exe $(CXXFLAGS) -Fo$@ -Tp$<
 ]] )
 printf( [[
 %%%s:
 	@printf "\033[1;35mbuilding $@\033[0m\n"
 	@mkdir -p "$(@D)"
-	@lib -OUT:$@ $^
+	@lib.exe -OUT:$@ $^
 ]], lib_suffix )
 
 elseif toolchain == "gcc" then

@@ -535,7 +535,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	wc.lpfnWndProc   = WndProc;
 	wc.hInstance     = hInstance;
 	wc.hCursor       = LoadCursor( NULL, IDC_ARROW );
-	wc.hbrBackground = ( HBRUSH ) COLOR_WINDOW;
 	wc.lpszClassName = WINDOW_CLASSNAME;
 	wc.hbrBackground = CreateSolidBrush( RGB( 0x1a, 0x1a, 0x1a ) );
 

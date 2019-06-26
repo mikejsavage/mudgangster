@@ -12,6 +12,7 @@ if OS == "windows" then
 	libs = { "lua", "lpeg", "lfs" }
 end
 
-bin( "mudgangster", { platform_objs, "src/ui", "src/script", "src/textbox", "src/input", "src/platform_network" }, libs )
+bin( "mudgangster", { platform_objs, "src/ui", "src/script", "src/textbox", "src/input", "src/platform_network", "src/rc" }, libs )
+rc( "src/rc" )
 msvc_bin_ldflags( "mudgangster", "gdi32.lib Ws2_32.lib" )
 gcc_bin_ldflags( "mudgangster", "-lm -lX11 -llua" )

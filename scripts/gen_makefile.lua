@@ -197,7 +197,7 @@ end
 
 function rc( rc_name )
 	if OS == "windows" then
-		printf( "%s/%s%s: %s.rc %s.xml", dir, rc_name, obj_suffix, rc_name, rc_name )
+		printf( "%s/%s%s: %s.rc", dir, rc_name, obj_suffix, rc_name, rc_name )
 		printf( "\t@printf \"\\033[1;33mbuilding $@\\033[0m\\n\"" )
 		printf( "\t@mkdir -p \"$(@D)\"" )
 		printf( "\t@rc.exe /fo$@ /nologo $<" )

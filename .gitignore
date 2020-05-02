@@ -1,6 +1,7 @@
 /build
 /release
 /build.ninja
+/src/gitversion.h
 
 /mudgangster
 /mudgangster-*

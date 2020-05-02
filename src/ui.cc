@@ -1,6 +1,7 @@
 #include "platform_ui.h"
 #include "input.h"
 #include "textbox.h"
+#include "gitversion.h"
 
 static TextBox main_text;
 static TextBox chat_text;
@@ -28,6 +29,9 @@ void ui_init() {
 	statusContents = ( StatusChar * ) malloc( statusCapacity * sizeof( StatusChar ) );
 	if( statusContents == NULL )
 		FATAL( "malloc" );
+
+	ui_main_print( "> Mud Gangster ", 0, SYSTEM, BLACK, false );
+	ui_main_print( APP_VERSION, 0, SYSTEM, BLACK, true );
 }
 
 void ui_term() {

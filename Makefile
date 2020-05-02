@@ -33,6 +33,7 @@ clean:
 	@$(NINJA) -t clean || true
 	@$(LUA) make.lua bench > build.ninja || true
 	@$(NINJA) -t clean || true
+	@rm -f src/gitversion.h
 	@rm -rf build release
 	@rm -f *.exp *.ilk *.ilp *.lib *.pdb
 	@rm -f build.ninja

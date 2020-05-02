@@ -300,6 +300,9 @@ static void event_key_press( XEvent * xevent ) {
 			input_right();
 			break;
 
+		case XK_Escape:
+			break;
+
 		ADD_MACRO( XK_KP_1, "kp1" );
 		ADD_MACRO( XK_KP_End, "kp1" );
 

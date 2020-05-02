@@ -1,0 +1,15 @@
+version: "{build}"
+clone_depth: 1
+image: Visual Studio 2019
+
+build_script:
+- call "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat" x86_amd64
+- ggbuild\lua.exe make.lua release > build.ninja
+- ggbuild\ninja.exe -v -k 0
+- ggbuild\lua.exe ggbuild\ninja_timeline.lua
+- ggbuild\ducible.exe release\mudgangster.exe
+- ggbuild\ducible.exe release\server.exe
+- makensis.exe installer\installer.nsi
+
+artifacts:
+- path: installer/MudGangsterInstaller.exe

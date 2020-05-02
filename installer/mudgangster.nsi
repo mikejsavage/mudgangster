@@ -3,6 +3,9 @@
 Name "Mud Gangster"
 Outfile "MudGangsterInstaller.exe"
 
+!define MUI_ICON "../icon.ico"
+!define MUI_UNICON "../icon.ico"
+
 InstallDir "$PROGRAMFILES64\Mud Gangster"
 RequestExecutionLevel admin
 

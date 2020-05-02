@@ -15,7 +15,8 @@ local handlers = require( "handlers" )
 local printMain, newlineMain, printChat, newlineChat,
 	setHandlers, urgent, setStatus,
 	sock_connect, sock_send, sock_close,
-	get_time, set_font = ...
+	get_time, set_font,
+	exe_path = ...
 
 local socket_api = {
 	connect = sock_connect,
@@ -51,4 +52,4 @@ require( "status" ).init( setStatus )
 
 setHandlers( handlers.input, handlers.macro, handlers.close, socket_data_handler, handlers.interval )
 
-script.load()
+script.load( exe_path )

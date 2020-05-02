@@ -1,14 +1,25 @@
 local lfs = require( "lfs" )
 local serialize = require( "serialize" )
 
-local ScriptsDir
+local ScriptsDirs
 if mud.os == "windows" then
-	ScriptsDir = os.getenv( "APPDATA" ) .. "\\Mud Gangster\\scripts"
+	ScriptsDirs = {
+		os.getenv( "APPDATA" ) .. "\\Mud Gangster\\scripts",
+		os.getenv( "USERPROFILE" ) .. "\\Documents\\Mud Gangster\\scripts",
+	}
 else
-	ScriptsDir = os.getenv( "HOME" ) .. "/.mudgangster/scripts"
+	ScriptsDirs = { os.getenv( "HOME" ) .. "/.mudgangster/scripts" }
 end
 
-package.path = package.path .. ";" .. ScriptsDir .. "/?.lua"
+-- TODO: missing exe dir
+do
+	local paths = { }
+	for _, dir in ipairs( ScriptsDirs ) do
+		table.insert( paths, dir .. "/?.lua" )
+	end
+
+	package.path = package.path .. ";" .. table.concat( paths, ";" )
+end
 
 local function loadScript( name, path, padding )
 	local function throw( err )
@@ -92,55 +103,60 @@ local function loadScript( name, path, padding )
 	end
 end
 
-local function loadScripts()
-	mud.print( "#s> Loading scripts..." )
+local function loadScriptsFrom( dir )
+	mud.print( "\n#s> Loading scripts from %s... ", dir )
 
-	local readable, err = io.readable( ScriptsDir )
+	local readable, err = io.readable( dir )
 
-	if readable then
-		local attr = lfs.attributes( ScriptsDir )
+	if not readable then
+		mud.print( "#lrfailed!\n#s>     %s", err )
+		return
+	end
 
-		if attr.mode == "directory" then
-			local scripts = { }
-			local maxLen = 0
+	local attr = lfs.attributes( dir )
 
-			for script in lfs.dir( ScriptsDir ) do
-				if not script:match( "^%." ) then
-					local path = ScriptsDir .. "/" .. script
-					local scriptAttr = lfs.attributes( path )
+	if attr.mode == "directory" then
+		local scripts = { }
+		local maxLen = 0
 
-					if scriptAttr.mode == "directory" then
-						maxLen = math.max( script:len(), maxLen )
+		for script in lfs.dir( dir ) do
+			if not script:match( "^%." ) then
+				local path = dir .. "/" .. script
+				local scriptAttr = lfs.attributes( path )
 
-						table.insert( scripts, {
-							name = script,
-							path = path,
-						} )
-					end
+				if scriptAttr.mode == "directory" then
+					maxLen = math.max( script:len(), maxLen )
+
+					table.insert( scripts, {
+						name = script,
+						path = path,
+					} )
 				end
 			end
+		end
 
-			table.sort( scripts, function( a, b )
-				return a.name < b.name
-			end )
+		table.sort( scripts, function( a, b )
+			return a.name < b.name
+		end )
 
-			for _, script in ipairs( scripts ) do
-				loadScript( script.name, script.path, maxLen )
-			end
-		else
-			mud.print( "#sfailed!\n> `%s' isn't a directory", ScriptsDir )
+		for _, script in ipairs( scripts ) do
+			loadScript( script.name, script.path, maxLen )
 		end
 	else
-		mud.print( "#sfailed!\n> %s", err )
+		mud.print( "#lrfailed!\n#s>     `%s' isn't a directory", dir )
 	end
+end
+
+local function loadScripts( exe_path )
+	for _, dir in ipairs( ScriptsDirs ) do
+		loadScriptsFrom( dir )
+	end
+
+	loadScriptsFrom( exe_path .. "/scripts" )
 
 	mud.event( "scriptsLoaded" )
 end
 
-local function closeScripts()
-end
-
 return {
 	load = loadScripts,
-	close = closeScripts,
 }

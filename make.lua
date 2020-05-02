@@ -1,6 +1,7 @@
 require( "ggbuild.gen_ninja" )
 
 require( "libs.tracy" )
+require( "libs.whereami" )
 
 obj_cxxflags( ".*", "-I source -I libs" )
 
@@ -37,7 +38,11 @@ bin( "mudgangster", {
 		"src/ui.cc", "src/script.cc", "src/textbox.cc", "src/input.cc", "src/platform_network.cc",
 	},
 
-	libs = { platform_libs, "tracy" },
+	libs = {
+		platform_libs,
+		"tracy",
+		"whereami"
+	},
 
 	rc = "src/rc",
 

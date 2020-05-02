@@ -10,6 +10,8 @@
 #include <lua.hpp>
 #endif
 
+#include "whereami/whereami.h"
+
 #if LUA_VERSION_NUM < 502
 #define luaL_len lua_objlen
 #endif
@@ -246,6 +248,26 @@ extern "C" int mud_set_font( lua_State * L ) {
 
 } // anon namespace
 
+static void push_exe_dir( lua_State * L ) {
+	int len = wai_getExecutablePath( NULL, 0, NULL );
+	if( len == -1 ) {
+		lua_pushliteral( L, "." );
+	}
+	else {
+		char * buf = alloc_many< char >( len );
+
+		int dirlen;
+		if( wai_getExecutablePath( buf, len, &dirlen ) == -1 ) {
+			lua_pushliteral( L, "." );
+		}
+		else {
+			lua_pushlstring( L, buf, dirlen );
+		}
+
+		free( buf );
+	}
+}
+
 #if PLATFORM_WINDOWS
 extern "C" int luaopen_lpeg( lua_State * L );
 extern "C" int luaopen_lfs( lua_State * L );
@@ -293,7 +315,9 @@ void script_init() {
 
 	lua_pushcfunction( lua, mud_set_font );
 
-	pcall( 12, "Error running main.lua" );
+	push_exe_dir( lua );
+
+	pcall( 13, "Error running main.lua" );
 }
 
 void script_term() {

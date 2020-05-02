@@ -382,7 +382,9 @@ static void event_focus( XEvent * xevent ) {
 	XFree( hints );
 }
 
-void ui_handleXEvents() {
+static void ui_handleXEvents() {
+	ZoneScoped;
+
 	void ( *event_handlers[ LASTEvent ] )( XEvent * ) = { };
 	event_handlers[ ButtonPress ] = event_mouse_down;
 	event_handlers[ MotionNotify ] = event_mouse_move;
@@ -478,6 +480,8 @@ static void initStyle() {
 }
 
 void platform_ui_init() {
+	ZoneScoped;
+
 	for( Socket & s : sockets ) {
 		s.in_use = false;
 	}
@@ -579,6 +583,8 @@ int main() {
 	input_init();
 	platform_ui_init();
 	script_init();
+
+	FrameMark;
 
 	ui_handleXEvents();
 

@@ -20,6 +20,8 @@ static size_t statusLen = 0;
 static bool status_dirty = false;
 
 void ui_init() {
+	ZoneScoped;
+
 	textbox_init( &main_text, SCROLLBACK_SIZE );
 	textbox_init( &chat_text, CHAT_ROWS );
 

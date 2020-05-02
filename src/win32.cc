@@ -573,6 +573,8 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	input_init();
 	script_init();
 
+	FrameMark;
+
 	MSG msg;
 	while( GetMessage( &msg, NULL, 0, 0 ) > 0 ) {
 		if( !is_macro( &msg ) )

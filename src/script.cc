@@ -36,6 +36,8 @@ static void pcall( int args, const char * err ) {
 }
 
 void script_handleInput( const char * buffer, int len ) {
+	ZoneScoped;
+
 	assert( inputHandlerIdx != LUA_NOREF );
 
 	lua_rawgeti( lua, LUA_REGISTRYINDEX, inputHandlerIdx );
@@ -45,6 +47,8 @@ void script_handleInput( const char * buffer, int len ) {
 }
 
 void script_doMacro( const char * key, int len, bool shift, bool ctrl, bool alt ) {
+	ZoneScoped;
+
 	// printf( "macro %s%s%s%.*s\n", shift ? "s" : "", ctrl ? "c" : "", alt ? "a" : "", len, key );
 	// fflush( stdout );
 
@@ -62,6 +66,8 @@ void script_doMacro( const char * key, int len, bool shift, bool ctrl, bool alt 
 }
 
 void script_handleClose() {
+	ZoneScoped;
+
 	assert( closeHandlerIdx != LUA_NOREF );
 
 	lua_rawgeti( lua, LUA_REGISTRYINDEX, closeHandlerIdx );
@@ -69,20 +75,26 @@ void script_handleClose() {
 }
 
 void script_socketData( void * sock, const char * data, size_t len ) {
+	ZoneScoped;
+
 	assert( socketHandlerIdx != LUA_NOREF );
 
 	lua_rawgeti( lua, LUA_REGISTRYINDEX, socketHandlerIdx );
 
 	lua_pushlightuserdata( lua, sock );
-	if( data == NULL )
+	if( data == NULL ) {
 		lua_pushnil( lua );
-	else
+	}
+	else {
 		lua_pushlstring( lua, data, len );
+	}
 
 	pcall( 2, "script_socketData" );
 }
 
 void script_fire_intervals() {
+	ZoneScoped;
+
 	assert( intervalHandlerIdx != LUA_NOREF );
 
 	lua_rawgeti( lua, LUA_REGISTRYINDEX, intervalHandlerIdx );
@@ -240,6 +252,8 @@ extern "C" int luaopen_lfs( lua_State * L );
 #endif
 
 void script_init() {
+	ZoneScoped;
+
 	lua = luaL_newstate();
 	luaL_openlibs( lua );
 

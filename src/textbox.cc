@@ -35,6 +35,8 @@ static void unpack_style( uint8_t style, int * fg, int * bg, int * bold ) {
 }
 
 void textbox_init( TextBox * tb, size_t scrollback ) {
+	ZoneScoped;
+
 	// TODO: this is kinda crap
 	*tb = { };
 	tb->lines = ( TextBox::Line * ) calloc( sizeof( TextBox::Line ), scrollback );

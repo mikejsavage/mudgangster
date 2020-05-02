@@ -7,6 +7,8 @@
 #include "script.h"
 #include "ui.h"
 
+#include "platform_ui.h"
+
 static Span< char > history[ MAX_INPUT_HISTORY ] = { };
 static size_t history_head = 0;
 static size_t history_count = 0;
@@ -151,6 +153,8 @@ void input_draw() {
 			ui_draw_char( PADDING + cursor_pos * fw, top - SPACING, input[ cursor_pos ], COLOUR_BG, false );
 		}
 	}
+
+	platform_make_dirty( left, top, width, height );
 
 	dirty = false;
 }

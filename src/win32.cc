@@ -149,6 +149,8 @@ static COLORREF get_colour( Colour colour, bool bold ) {
 }
 
 void platform_fill_rect( int left, int top, int width, int height, Colour colour, bool bold ) {
+	ZoneScoped;
+
 	// TODO: preallocate these
 	HBRUSH brush = CreateSolidBrush( get_colour( colour, bold ) );
 	RECT r = { left, top, left + width, top + height };
@@ -157,12 +159,16 @@ void platform_fill_rect( int left, int top, int width, int height, Colour colour
 }
 
 void platform_draw_char( int left, int top, char c, Colour colour, bool bold, bool force_bold_font ) {
+	ZoneScoped;
+
 	SelectObject( UI.back_buffer, ( bold || force_bold_font ? Style.font.bold : Style.font.regular ) );
 	SetTextColor( UI.back_buffer, get_colour( colour, bold ) );
 	TextOutA( UI.back_buffer, left, top + SPACING, &c, 1 );
 }
 
 void platform_make_dirty( int left, int top, int width, int height ) {
+	ZoneScoped;
+
 	RECT r = { left, top, left + width, top + height };
 	InvalidateRect( UI.hwnd, &r, FALSE );
 }
@@ -241,6 +247,8 @@ void platform_set_clipboard( const char * str, size_t len ) {
 }
 
 LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
+	ZoneScoped;
+
 	switch( msg ) {
 		case WM_CREATE: {
 			UI.hdc = GetDC( hwnd );
@@ -531,10 +539,10 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	Style = { };
 
 	WNDCLASSEX wc = { };
-	wc.cbSize        = sizeof( WNDCLASSEX );
-	wc.lpfnWndProc   = WndProc;
-	wc.hInstance     = hInstance;
-	wc.hCursor       = LoadCursor( NULL, IDC_ARROW );
+	wc.cbSize = sizeof( WNDCLASSEX );
+	wc.lpfnWndProc = WndProc;
+	wc.hInstance = hInstance;
+	wc.hCursor = LoadCursor( NULL, IDC_ARROW );
 	wc.lpszClassName = WINDOW_CLASSNAME;
 	wc.hbrBackground = CreateSolidBrush( RGB( 0x1a, 0x1a, 0x1a ) );
 

@@ -350,7 +350,9 @@ void textbox_draw( TextBox * tb ) {
 
 			// bg
 			// TODO: top/bottom spacing seems to be inconsistent here, try with large spacing
-			ui_fill_rect( tb->x + left, tb->y + top - top_spacing, fw, fh + bot_spacing, Colour( bg ), bold_bg );
+			if( bg != BLACK ) {
+				ui_fill_rect( tb->x + left, tb->y + top - top_spacing, fw, fh + bot_spacing, Colour( bg ), bold_bg );
+			}
 
 			// fg
 			ui_draw_char( tb->x + left, tb->y + top, glyph.ch, Colour( fg ), bold_fg, bold );
@@ -359,6 +361,8 @@ void textbox_draw( TextBox * tb ) {
 		lines_drawn++;
 		rows_drawn += line_rows;
 	}
+
+	platform_make_dirty( tb->x, tb->y, tb->w, tb->h );
 
 	tb->dirty = false;
 }

@@ -36,7 +36,6 @@ void ui_term() {
 
 void ui_fill_rect( int left, int top, int width, int height, Colour colour, bool bold ) {
 	platform_fill_rect( left, top, width, height, colour, bold );
-	platform_make_dirty( left, top, width, height );
 }
 
 void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool force_bold_font ) {
@@ -197,7 +196,6 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool for
 	}
 
 	platform_draw_char( left, top, c, colour, bold, force_bold_font );
-	platform_make_dirty( left, top, fw, line_height );
 }
 
 void ui_clear_status() {
@@ -235,6 +233,8 @@ void ui_draw_status() {
 		int y = window_height - ( PADDING * 3 ) - fh * 2 - SPACING;
 		ui_draw_char( x, y, sc.c, sc.fg, sc.bold );
 	}
+
+	platform_make_dirty( 0, window_height - PADDING * 4 - fh * 2, window_width, fh + PADDING * 2 );
 
 	status_dirty = false;
 }

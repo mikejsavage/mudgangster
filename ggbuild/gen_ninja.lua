@@ -318,7 +318,7 @@ end
 
 local function rule_for_src( src_name )
 	local ext = src_name:match( "([^%.]+)$" )
-	return ( { cc = "cpp" } )[ ext ]
+	return ( { cc = "cpp", cpp = "cpp" } )[ ext ]
 end
 
 local function write_ninja_script()

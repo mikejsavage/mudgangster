@@ -1,5 +1,7 @@
 require( "ggbuild.gen_ninja" )
 
+require( "libs.tracy" )
+
 obj_cxxflags( ".*", "-I source -I libs" )
 
 msvc_obj_cxxflags( ".*", "/W4 /wd4100 /wd4146 /wd4189 /wd4201 /wd4307 /wd4324 /wd4351 /wd4127 /wd4505 /wd4530 /wd4702 /wd4706 /D_CRT_SECURE_NO_WARNINGS" )
@@ -10,6 +12,10 @@ gcc_obj_cxxflags( ".*", "-std=c++11 -msse3 -ffast-math -fno-exceptions -fno-rtti
 gcc_obj_cxxflags( ".*", "-Wall -Wextra -Wcast-align -Wvla -Wformat-security" ) -- -Wconversion
 gcc_obj_cxxflags( ".*", "-Wno-unused-parameter -Wno-missing-field-initializers -Wno-implicit-fallthrough -Wno-format-truncation" )
 gcc_obj_cxxflags( ".*", "-Werror=vla -Werror=format-security -Werror=unused-value" )
+
+if config ~= "release" then
+	obj_cxxflags( ".*", "-DTRACY_ENABLE" )
+end
 
 local platform_srcs, platform_libs
 
@@ -31,7 +37,7 @@ bin( "mudgangster", {
 		"src/ui.cc", "src/script.cc", "src/textbox.cc", "src/input.cc", "src/platform_network.cc",
 	},
 
-	libs = platform_libs,
+	libs = { platform_libs, "tracy" },
 
 	rc = "src/rc",
 

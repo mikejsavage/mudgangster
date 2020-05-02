@@ -1,9 +1,9 @@
 if not arg[ 1 ] or not arg[ 2 ] then
-	print( arg[ 0 ] .. " <source directory> <path to main> [Lua version]" )
+	print( arg[ 0 ] .. " <source directory> <path to main>" )
 	os.exit( 1 )
 end
 
-local lfs = require( "lfs" )
+local lfs = require( "INTERNAL_LFS" )
 
 local merged = { }
 
@@ -42,5 +42,12 @@ local f = io.open( root .. "/" .. main, "r" )
 local contents = f:read( "*all" )
 f:close()
 
-print( table.concat( merged, "\n" ) )
-print( contents )
+table.insert( merged, contents )
+
+local combined = table.concat( merged, "\n" )
+
+local f = io.open( "build/lua_combined.h", "w" )
+for i = 1, #combined do
+	f:write( string.byte( combined, i ) .. "," )
+end
+f:close()

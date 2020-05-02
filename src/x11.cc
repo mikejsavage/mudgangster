@@ -11,6 +11,7 @@
 #include "script.h"
 #include "ui.h"
 
+#include "platform_ui.h"
 #include "platform_network.h"
 
 struct Socket {
@@ -572,7 +573,13 @@ static Socket * socket_from_fd( int fd ) {
 	return NULL;
 }
 
-void event_loop() {
+int main() {
+	net_init();
+	ui_init();
+	input_init();
+	platform_ui_init();
+	script_init();
+
 	ui_handleXEvents();
 
 	while( !closing ) {
@@ -618,4 +625,12 @@ void event_loop() {
 
 		ui_handleXEvents();
 	}
+
+	script_term();
+	platform_ui_term();
+	input_term();
+	ui_term();
+	net_term();
+
+	return 0;
 }

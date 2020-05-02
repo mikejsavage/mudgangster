@@ -1,8 +1,13 @@
-build
-release
-gen.mk
+/build
+/release
+/build.ninja
 
-mudgangster
+/mudgangster
+/mudgangster-*
+
+.vs/
+.vscode/
+
 *.exe
 *.exp
 *.ilk

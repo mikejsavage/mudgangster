@@ -1,26 +1,38 @@
 all: debug
-.PHONY: debug asan release clean
+.PHONY: debug asan bench release clean
 
-build/lua_combined.h: src/lua/action.lua src/lua/alias.lua src/lua/chat.lua src/lua/mud.lua src/lua/event.lua src/lua/gag.lua src/lua/handlers.lua src/lua/intercept.lua src/lua/interval.lua src/lua/macro.lua src/lua/main.lua src/lua/script.lua src/lua/serialize.lua src/lua/status.lua src/lua/sub.lua src/lua/utils.lua src/lua/socket.lua
-	@printf "\033[1;33mbuilding $@\033[0m\n"
-	@scripts/pack_lua.sh
+LUA = ggbuild/lua.linux
+NINJA = ggbuild/ninja.linux
 
-debug: build/lua_combined.h
-	@lua make.lua > gen.mk
-	@$(MAKE) -f gen.mk
+WSLENV ?= notwsl
+ifndef WSLENV
+	LUA = ggbuild/lua.exe
+	NINJA = ggbuild/ninja.exe
+endif
 
-asan: build/lua_combined.h
-	@lua make.lua asan > gen.mk
-	@$(MAKE) -f gen.mk
+debug:
+	@$(LUA) make.lua > build.ninja
+	@$(NINJA)
 
-release: build/lua_combined.h
-	@lua make.lua release > gen.mk
-	@$(MAKE) -f gen.mk
+asan:
+	@$(LUA) make.lua asan > build.ninja
+	@$(NINJA)
+
+bench:
+	@$(LUA) make.lua bench > build.ninja
+	@$(NINJA)
+
+release:
+	@$(LUA) make.lua release > build.ninja
+	@$(NINJA)
 
 clean:
-	@lua make.lua debug > gen.mk
-	@$(MAKE) -f gen.mk clean
-	@lua make.lua asan > gen.mk
-	@$(MAKE) -f gen.mk clean
-	@rm -f gen.mk
-
+	@$(LUA) make.lua debug > build.ninja
+	@$(NINJA) -t clean || true
+	@$(LUA) make.lua asan > build.ninja || true
+	@$(NINJA) -t clean || true
+	@$(LUA) make.lua bench > build.ninja || true
+	@$(NINJA) -t clean || true
+	@rm -rf build release
+	@rm -f *.exp *.ilk *.ilp *.lib *.pdb
+	@rm -f build.ninja

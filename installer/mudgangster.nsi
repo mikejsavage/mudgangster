@@ -33,7 +33,7 @@ Section "Install" SectionInstall
 	WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MudGangster" "DisplayVersion" "0.0.0.0"
 	WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MudGangster" "NoModify" 1
 	WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MudGangster" "NoRepair" 1
-	
+
 	SectionGetSize ${SectionInstall} $0
 	IntFmt $1 "0x%08X" $0
 	WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MudGangster" "EstimatedSize" $1

@@ -12,3 +12,9 @@ build_script:
 
 artifacts:
 - path: installer/MudGangsterInstaller.exe
+
+deploy:
+- provider: GitHub
+  auth_token:
+    secure: uTKqq6j9jmjRhhb8XGIpL1Xp2Fc1QtPeq0aaWbqXa5Tz6lL/dTVfrfFpceQDnbz1
+  artifact: installer/MudGangsterInstaller.exe

@@ -8,7 +8,6 @@ build_script:
 - ggbuild\ninja.exe -v -k 0
 - ggbuild\lua.exe ggbuild\ninja_timeline.lua
 - ggbuild\ducible.exe release\mudgangster.exe
-- ggbuild\ducible.exe release\server.exe
 - makensis.exe installer\installer.nsi
 
 artifacts:

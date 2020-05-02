@@ -5,7 +5,7 @@
 #include "platform_time.h"
 
 #if PLATFORM_WINDOWS
-#include "libs/lua/lua.hpp"
+#include "lua/lua.hpp"
 #else
 #include <lua.hpp>
 #endif

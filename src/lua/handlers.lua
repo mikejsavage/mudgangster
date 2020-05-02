@@ -30,7 +30,7 @@ local function echoOn()
 end
 
 local function echoOff()
-	showInput = true
+	showInput = false
 
 	return ""
 end

@@ -2,26 +2,18 @@
 #include <string.h>
 
 #include "common.h"
+#include "array.h"
 #include "input.h"
 #include "script.h"
 #include "ui.h"
 
-typedef struct {
-	char * text;
-	size_t len;
-} InputHistory;
+static Span< char > history[ MAX_INPUT_HISTORY ] = { };
+static size_t history_head = 0;
+static size_t history_count = 0;
+static size_t history_delta = 0;
 
-static InputHistory inputHistory[ MAX_INPUT_HISTORY ];
-static int inputHistoryHead = 0;
-static int inputHistoryCount = 0;
-static int inputHistoryDelta = 0;
+static DynamicArray< char > input;
 
-static char * inputBuffer = NULL;
-static char * starsBuffer = NULL;
-
-static size_t inputBufferSize = 256;
-
-static size_t inputLen = 0;
 static size_t cursor_pos = 0;
 
 static int left, top;
@@ -30,107 +22,78 @@ static int width, height;
 static bool dirty = false;
 
 void input_init() {
-	inputBuffer = ( char * ) malloc( inputBufferSize );
-	starsBuffer = ( char * ) malloc( inputBufferSize );
-
-	memset( starsBuffer, '*', inputBufferSize );
 }
 
 void input_term() {
-	free( inputBuffer );
-	free( starsBuffer );
 }
 
 void input_return() {
-	if( inputLen > 0 ) {
-		InputHistory * lastCmd = &inputHistory[ ( inputHistoryHead + inputHistoryCount - 1 ) % MAX_INPUT_HISTORY ];
+	if( input.size() > 0 ) {
+		Span< const char > last_cmd = history_count == 0 ? Span< const char >() : history[ ( history_head + history_count - 1 ) % MAX_INPUT_HISTORY ];
 
-		if( inputHistoryCount == 0 || inputLen != lastCmd->len || strncmp( inputBuffer, lastCmd->text, inputLen ) != 0 ) {
-			int pos = ( inputHistoryHead + inputHistoryCount ) % MAX_INPUT_HISTORY;
+		if( history_count == 0 || input.size() != last_cmd.n || memcmp( input.ptr(), last_cmd.ptr, last_cmd.num_bytes() ) != 0 ) {
+			size_t pos = ( history_head + history_count ) % MAX_INPUT_HISTORY;
 
-			if( inputHistoryCount == MAX_INPUT_HISTORY ) {
-				free( inputHistory[ pos ].text );
-
-				inputHistoryHead = ( inputHistoryHead + 1 ) % MAX_INPUT_HISTORY;
+			if( history_count == MAX_INPUT_HISTORY ) {
+				history_head++;
 			}
 			else {
-				inputHistoryCount++;
+				history_count++;
 			}
 
-			inputHistory[ pos ].text = ( char * ) malloc( inputLen );
-
-			memcpy( inputHistory[ pos ].text, inputBuffer, inputLen );
-			inputHistory[ pos ].len = inputLen;
+			free( history[ pos ].ptr );
+			history[ pos ] = alloc_span< char >( input.size() );
+			memcpy( history[ pos ].ptr, input.ptr(), input.num_bytes() );
 		}
 	}
 
-	script_handleInput( inputBuffer, inputLen );
+	script_handleInput( input.ptr(), input.size() );
 
-	inputHistoryDelta = 0;
-
-	inputLen = 0;
+	input.clear();
+	history_delta = 0;
 	cursor_pos = 0;
-
 	dirty = true;
 }
 
 void input_backspace() {
-	if( cursor_pos > 0 ) {
-		memmove( inputBuffer + cursor_pos - 1, inputBuffer + cursor_pos, inputLen - cursor_pos );
-
-		inputLen--;
-		cursor_pos--;
-		dirty = true;
-	}
+	if( cursor_pos == 0 )
+		return;
+	cursor_pos--;
+	input.remove( cursor_pos );
+	dirty = true;
 }
 
 void input_delete() {
-	if( cursor_pos < inputLen ) {
-		memmove( inputBuffer + cursor_pos, inputBuffer + cursor_pos + 1, inputLen - cursor_pos );
-
-		inputLen--;
+	if( input.remove( cursor_pos ) ) {
 		dirty = true;
 	}
 }
 
-void input_up() {
-	if( inputHistoryDelta >= inputHistoryCount )
-		return;
+static void input_from_history() {
+	if( history_delta == 0 ) {
+		input.clear();
+	}
+	else {
+		Span< const char > cmd = history[ ( history_head + history_count - history_delta ) % MAX_INPUT_HISTORY ];
+		input.from_span( cmd );
+	}
 
-	inputHistoryDelta++;
-	int pos = ( inputHistoryHead + inputHistoryCount - inputHistoryDelta ) % MAX_INPUT_HISTORY;
-
-	InputHistory cmd = inputHistory[ pos ];
-
-	memcpy( inputBuffer, cmd.text, cmd.len );
-
-	inputLen = cmd.len;
-	cursor_pos = cmd.len;
+	cursor_pos = input.size();
 	dirty = true;
 }
 
-void input_down() {
-	if( inputHistoryDelta == 0 )
+void input_up() {
+	if( history_delta >= history_count )
 		return;
+	history_delta++;
+	input_from_history();
+}
 
-	inputHistoryDelta--;
-
-	if( inputHistoryDelta != 0 ) {
-		int pos = ( inputHistoryHead + inputHistoryCount - inputHistoryDelta ) % MAX_INPUT_HISTORY;
-
-		InputHistory cmd = inputHistory[ pos ];
-
-		memcpy( inputBuffer, cmd.text, cmd.len );
-
-		inputLen = cmd.len;
-		cursor_pos = cmd.len;
-	}
-	else {
-		inputLen = 0;
-		cursor_pos = 0;
-	}
-
-	dirty = true;
+void input_down() {
+	if( history_delta == 0 )
+		return;
+	history_delta--;
+	input_from_history();
 }
 
 void input_left() {
@@ -141,28 +104,15 @@ void input_left() {
 }
 
 void input_right() {
-	cursor_pos = min( cursor_pos + 1, inputLen );
+	cursor_pos = min( cursor_pos + 1, input.size() );
 	dirty = true;
 }
 
 void input_add( const char * buffer, int len ) {
-	if( inputLen + len >= inputBufferSize ) {
-		inputBufferSize *= 2;
-
-		inputBuffer = ( char * ) realloc( inputBuffer, inputBufferSize );
-		starsBuffer = ( char * ) realloc( starsBuffer, inputBufferSize );
-
-		memset( starsBuffer + inputBufferSize / 2, '*', inputBufferSize / 2 );
+	for( int i = 0; i < len; i++ ) {
+		input.insert( buffer[ i ], cursor_pos );
+		cursor_pos++;
 	}
-
-	if( cursor_pos < inputLen ) {
-		memmove( inputBuffer + cursor_pos + len, inputBuffer + cursor_pos, inputLen - cursor_pos );
-	}
-
-	memcpy( inputBuffer + cursor_pos, buffer, len );
-
-	inputLen += len;
-	cursor_pos += len;
 
 	dirty = true;
 }
@@ -187,14 +137,19 @@ void input_draw() {
 
 	ui_fill_rect( left, top, width, height, COLOUR_BG, false );
 
-	for( size_t i = 0; i < inputLen; i++ ) {
-		ui_draw_char( PADDING + i * fw, top - SPACING, inputBuffer[ i ], WHITE, false );
+	size_t chars_that_fit = width / size_t( fw );
+	size_t chars_to_draw = min( input.size(), chars_that_fit );
+
+	for( size_t i = 0; i < chars_to_draw; i++ ) {
+		ui_draw_char( PADDING + i * fw, top - SPACING, input[ i ], WHITE, false );
 	}
 
-	ui_fill_rect( PADDING + cursor_pos * fw, top, fw, fh, COLOUR_CURSOR, false );
+	if( cursor_pos < chars_that_fit ) {
+		ui_fill_rect( PADDING + cursor_pos * fw, top, fw, fh, COLOUR_CURSOR, false );
 
-	if( cursor_pos < inputLen ) {
-		ui_draw_char( PADDING + cursor_pos * fw, top - SPACING, inputBuffer[ cursor_pos ], COLOUR_BG, false );
+		if( cursor_pos < input.size() ) {
+			ui_draw_char( PADDING + cursor_pos * fw, top - SPACING, input[ cursor_pos ], COLOUR_BG, false );
+		}
 	}
 
 	dirty = false;

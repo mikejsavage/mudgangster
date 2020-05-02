@@ -15,11 +15,13 @@ end
 do
 	local paths = { }
 	for _, dir in ipairs( ScriptsDirs ) do
-		table.insert( paths, dir .. "/?.lua" )
+		table.insert( paths, dir .. "\\?.lua" )
 	end
 
 	package.path = package.path .. ";" .. table.concat( paths, ";" )
 end
+
+local PathSeparator = package.config:match( "^([^\n]+)" )
 
 local function loadScript( name, path, padding )
 	local function throw( err )
@@ -33,7 +35,7 @@ local function loadScript( name, path, padding )
 
 	mud.print( "#s\n>   " )
 
-	local mainPath = path .. "/main.lua"
+	local mainPath = path .. PathSeparator .. "main.lua"
 	local readable, err = io.readable( mainPath )
 
 	if not readable then
@@ -49,7 +51,7 @@ local function loadScript( name, path, padding )
 			end,
 
 			saved = function( defaults )
-				local settingsPath = path .. "/settings.lua"
+				local settingsPath = path .. PathSeparator .. "settings.lua"
 
 				mud.listen( "shutdown", function()
 					local file = io.open( settingsPath, "w" )
@@ -121,7 +123,7 @@ local function loadScriptsFrom( dir )
 
 		for script in lfs.dir( dir ) do
 			if not script:match( "^%." ) then
-				local path = dir .. "/" .. script
+				local path = dir .. PathSeparator .. script
 				local scriptAttr = lfs.attributes( path )
 
 				if scriptAttr.mode == "directory" then
@@ -152,7 +154,7 @@ local function loadScripts( exe_path )
 		loadScriptsFrom( dir )
 	end
 
-	loadScriptsFrom( exe_path .. "/scripts" )
+	loadScriptsFrom( exe_path .. PathSeparator .. "scripts" )
 
 	mud.event( "scriptsLoaded" )
 end

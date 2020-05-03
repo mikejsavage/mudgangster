@@ -12,19 +12,18 @@
 #define NEWLINE_STRING "\n"
 #endif
 
-static uint8_t pack_style( Colour fg, Colour bg, bool bold ) {
+static u8 pack_style( Colour fg, Colour bg, bool bold ) {
 	STATIC_ASSERT( NUM_COLOURS * NUM_COLOURS * 2 < UINT8_MAX );
 
-	uint32_t style = 0;
+	u32 style = 0;
+	style = checked_cast< u32 >( fg );
+	style = style * NUM_COLOURS + checked_cast< u32 >( bg );
+	style = style * 2 + checked_cast< u32 >( bold );
 
-	style = checked_cast< uint32_t >( fg );
-	style = style * NUM_COLOURS + checked_cast< uint32_t >( bg );
-	style = style * 2 + checked_cast< uint32_t >( bold );
-
-	return checked_cast< uint8_t >( style );
+	return checked_cast< u8 >( style );
 }
 
-static void unpack_style( uint8_t style, int * fg, int * bg, int * bold ) {
+static void unpack_style( u8 style, int * fg, int * bg, int * bold ) {
 	*bold = style % 2;
 	style /= 2;
 
@@ -221,7 +220,7 @@ void textbox_mouse_up( TextBox * tb, int window_x, int window_y ) {
 		}
 	}
 
-	char * selected = ( char * ) malloc( selected_length );
+	char * selected = alloc_many< char >( selected_length );
 	selected[ selected_length - 1 ] = '\0';
 
 	// second pass to copy the selection out

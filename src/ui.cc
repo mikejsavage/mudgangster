@@ -55,13 +55,13 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool for
 	int bot_spacing = line_height - top_spacing;
 
 	// TODO: not the right char...
-	// if( uint8_t( c ) == 155 ) { // fill
+	// if( u8( c ) == 155 ) { // fill
 	// 	ui_fill_rect( left, top, fw, fh, colour, bold );
 	// 	return;
 	// }
 
 	// TODO: this has a vertical seam. using textbox-space coordinates would help
-	if( uint8_t( c ) == 176 ) { // light shade
+	if( u8( c ) == 176 ) { // light shade
 		for( int y = 0; y < fh; y += 3 ) {
 			for( int x = y % 6 == 0 ? 0 : 1; x < fw; x += 2 ) {
 				ui_fill_rect( left + x, top + y, 1, 1, colour, bold );
@@ -71,7 +71,7 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool for
 	}
 
 	// TODO: this has a horizontal seam but so does mm2k
-	if( uint8_t( c ) == 177 ) { // medium shade
+	if( u8( c ) == 177 ) { // medium shade
 		for( int y = 0; y < fh; y += 2 ) {
 			for( int x = y % 4 == 0 ? 1 : 0; x < fw; x += 2 ) {
 				ui_fill_rect( left + x, top + y, 1, 1, colour, bold );
@@ -81,7 +81,7 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool for
 	}
 
 	// TODO: this probably has a horizontal seam
-	if( uint8_t( c ) == 178 ) { // heavy shade
+	if( u8( c ) == 178 ) { // heavy shade
 		for( int y = 0; y < fh + SPACING; y++ ) {
 			for( int x = y % 2 == 0 ? 1 : 0; x < fw; x += 2 ) {
 				ui_fill_rect( left + x, top + y, 1, 1, colour, bold );
@@ -90,7 +90,7 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool for
 		return;
 	}
 
-	if( uint8_t( c ) == 179 ) { // vertical
+	if( u8( c ) == 179 ) { // vertical
 		ui_fill_rect( left + left_spacing, top, 1, line_height, colour, bold );
 		return;
 		// set_fg( colour, bold );
@@ -98,19 +98,19 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool for
 		// Xutf8DrawString( UI.display, UI.back_buffer, ( bold ? Style.fontBold : Style.font ).font, UI.gc, left, top + Style.font.ascent + SPACING, asdf, sizeof( asdf ) - 1 );
 	}
 
-	if( uint8_t( c ) == 180 ) { // right stopper
+	if( u8( c ) == 180 ) { // right stopper
 		ui_fill_rect( left, top + top_spacing, left_spacing, 1, colour, bold );
 		ui_fill_rect( left + left_spacing, top, 1, line_height, colour, bold );
 		return;
 	}
 
-	if( uint8_t( c ) == 186 ) { // double vertical
+	if( u8( c ) == 186 ) { // double vertical
 		ui_fill_rect( left + left_spacing - 1, top, 1, line_height, colour, bold );
 		ui_fill_rect( left + left_spacing + 1, top, 1, line_height, colour, bold );
 		return;
 	}
 
-	if( uint8_t( c ) == 187 ) { // double top right
+	if( u8( c ) == 187 ) { // double top right
 		ui_fill_rect( left, top + top_spacing - 1, right_spacing + 1, 1, colour, bold );
 		ui_fill_rect( left + left_spacing + 1, top + top_spacing - 1, 1, bot_spacing + 1, colour, bold );
 		ui_fill_rect( left, top + top_spacing + 1, right_spacing - 1, 1, colour, bold );
@@ -118,7 +118,7 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool for
 		return;
 	}
 
-	if( uint8_t( c ) == 188 ) { // double bottom right
+	if( u8( c ) == 188 ) { // double bottom right
 		ui_fill_rect( left, top + top_spacing + 1, right_spacing + 1, 1, colour, bold );
 		ui_fill_rect( left + left_spacing + 1, top, 1, top_spacing + 1, colour, bold );
 		ui_fill_rect( left, top + top_spacing - 1, right_spacing - 1, 1, colour, bold );
@@ -126,48 +126,48 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool for
 		return;
 	}
 
-	if( uint8_t( c ) == 191 ) { // top right
+	if( u8( c ) == 191 ) { // top right
 		ui_fill_rect( left, top + top_spacing, left_spacing, 1, colour, bold );
 		ui_fill_rect( left + left_spacing, top + top_spacing, 1, bot_spacing, colour, bold );
 		return;
 	}
 
-	if( uint8_t( c ) == 192 ) { // bottom left
+	if( u8( c ) == 192 ) { // bottom left
 		ui_fill_rect( left + left_spacing, top + top_spacing, right_spacing, 1, colour, bold );
 		ui_fill_rect( left + left_spacing, top, 1, top_spacing, colour, bold );
 		return;
 	}
 
-	if( uint8_t( c ) == 193 ) { // bottom stopper
+	if( u8( c ) == 193 ) { // bottom stopper
 		ui_fill_rect( left + left_spacing, top, 1, top_spacing, colour, bold );
 		ui_fill_rect( left, top + top_spacing, fw, 1, colour, bold );
 		return;
 	}
 
-	if( uint8_t( c ) == 194 ) { // top stopper
+	if( u8( c ) == 194 ) { // top stopper
 		ui_fill_rect( left + left_spacing, top + top_spacing, 1, bot_spacing, colour, bold );
 		ui_fill_rect( left, top + top_spacing, fw, 1, colour, bold );
 		return;
 	}
 
-	if( uint8_t( c ) == 195 ) { // left stopper
+	if( u8( c ) == 195 ) { // left stopper
 		ui_fill_rect( left + left_spacing, top + top_spacing, right_spacing, 1, colour, bold );
 		ui_fill_rect( left + left_spacing, top, 1, line_height, colour, bold );
 		return;
 	}
 
-	if( uint8_t( c ) == 196 ) { // horizontal
+	if( u8( c ) == 196 ) { // horizontal
 		ui_fill_rect( left, top + top_spacing, fw, 1, colour, bold );
 		return;
 	}
 
-	if( uint8_t( c ) == 197 ) { // cross
+	if( u8( c ) == 197 ) { // cross
 		ui_fill_rect( left, top + top_spacing, fw, 1, colour, bold );
 		ui_fill_rect( left + left_spacing, top, 1, line_height, colour, bold );
 		return;
 	}
 
-	if( uint8_t( c ) == 200 ) { // double bottom left
+	if( u8( c ) == 200 ) { // double bottom left
 		ui_fill_rect( left + left_spacing - 1, top + top_spacing + 1, right_spacing + 1, 1, colour, bold );
 		ui_fill_rect( left + left_spacing - 1, top, 1, top_spacing + 1, colour, bold );
 		ui_fill_rect( left + left_spacing + 1, top + top_spacing - 1, right_spacing - 1, 1, colour, bold );
@@ -175,7 +175,7 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool for
 		return;
 	}
 
-	if( uint8_t( c ) == 201 ) { // double top left
+	if( u8( c ) == 201 ) { // double top left
 		ui_fill_rect( left + left_spacing - 1, top + top_spacing - 1, right_spacing + 1, 1, colour, bold );
 		ui_fill_rect( left + left_spacing - 1, top + top_spacing - 1, 1, bot_spacing + 1, colour, bold );
 		ui_fill_rect( left + left_spacing + 1, top + top_spacing + 1, right_spacing - 1, 1, colour, bold );
@@ -183,19 +183,19 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool for
 		return;
 	}
 
-	if( uint8_t( c ) == 205 ) { // double horizontal
+	if( u8( c ) == 205 ) { // double horizontal
 		ui_fill_rect( left, top + top_spacing - 1, fw, 1, colour, bold );
 		ui_fill_rect( left, top + top_spacing + 1, fw, 1, colour, bold );
 		return;
 	}
 
-	if( uint8_t( c ) == 217 ) { // bottom right
+	if( u8( c ) == 217 ) { // bottom right
 		ui_fill_rect( left, top + top_spacing, right_spacing, 1, colour, bold );
 		ui_fill_rect( left + left_spacing, top, 1, top_spacing, colour, bold );
 		return;
 	}
 
-	if( uint8_t( c ) == 218 ) { // top left
+	if( u8( c ) == 218 ) { // top left
 		ui_fill_rect( left + left_spacing, top + top_spacing, right_spacing, 1, colour, bold );
 		ui_fill_rect( left + left_spacing, top + top_spacing, 1, bot_spacing, colour, bold );
 		return;

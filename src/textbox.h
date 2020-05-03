@@ -8,7 +8,7 @@ constexpr size_t SCROLLBACK_SIZE = 1 << 14;
 struct TextBox {
 	struct Glyph {
 		char ch;
-		uint8_t style;
+		u8 style;
 	};
 
 	struct Line {

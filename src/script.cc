@@ -16,7 +16,7 @@
 #define luaL_len lua_objlen
 #endif
 
-static const uint8_t lua_combined[] = {
+static constexpr u8 lua_combined[] = {
 #include "../build/lua_combined.h"
 };
 

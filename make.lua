@@ -58,4 +58,4 @@ rule combine-lua
     command = $lua ggbuild/pack_lua.lua src/lua main.lua
     description = lua_combined.h
 ]] )
-print( "build build/lua_combined.h: combine-lua | ggbuild/pack_lua.lua" )
+print( "build build/lua_combined.h: combine-lua " .. table.concat( glob( "src/lua/*.lua" ), " " ) .. " | ggbuild/pack_lua.lua" )

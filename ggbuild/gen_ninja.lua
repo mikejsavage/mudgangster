@@ -121,12 +121,12 @@ local dir = "build/" .. OS_config
 local output = { }
 
 local function flatten_into( res, t )
-	for _, x in ipairs( t ) do
-		if type( x ) == "table" then
+	if type( t ) == "table" then
+		for _, x in ipairs( t ) do
 			flatten_into( res, x )
-		else
-			table.insert( res, x )
 		end
+	else
+		table.insert( res, t )
 	end
 end
 
@@ -196,7 +196,7 @@ local function glob_impl( dir, rel, res, prefix, suffix, recursive )
 	end
 end
 
-local function glob( srcs )
+function glob( srcs )
 	local res = { }
 	for _, pattern in ipairs( flatten( srcs ) ) do
 		if pattern:find( "*", 1, true ) then

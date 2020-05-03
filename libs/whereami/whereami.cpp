@@ -48,7 +48,9 @@ extern "C" {
 
 #if defined(_WIN32)
 
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #if defined(_MSC_VER)
 #pragma warning(push, 3)
 #endif
@@ -286,7 +288,7 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
             char* begin;
             char* p;
 
-            begin = (char*)mmap(0, offset, PROT_READ, MAP_SHARED, fd, 0);
+            begin = (char*)mmap(0, offset + sizeof(p), PROT_READ, MAP_SHARED, fd, 0);
             p = begin + offset;
 
             while (p >= begin) // scan backwards
@@ -305,7 +307,7 @@ int WAI_PREFIX(getModulePath)(char* out, int capacity, int* dirname_length)
                 break;
               }
 
-              p -= 4;
+              --p;
             }
 
             munmap(begin, offset);

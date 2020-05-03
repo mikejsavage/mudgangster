@@ -1,4 +1,5 @@
 #include "platform_ui.h"
+#include "array.h"
 #include "input.h"
 #include "textbox.h"
 #include "gitversion.h"
@@ -15,9 +16,7 @@ typedef struct {
 	bool bold;
 } StatusChar;
 
-static StatusChar * statusContents = NULL;
-static size_t statusCapacity = 256;
-static size_t statusLen = 0;
+static DynamicArray< StatusChar > status;
 static bool status_dirty = false;
 
 void ui_init() {
@@ -26,10 +25,6 @@ void ui_init() {
 	textbox_init( &main_text, SCROLLBACK_SIZE );
 	textbox_init( &chat_text, CHAT_ROWS );
 
-	statusContents = ( StatusChar * ) malloc( statusCapacity * sizeof( StatusChar ) );
-	if( statusContents == NULL )
-		FATAL( "malloc" );
-
 	ui_main_print( "> Mud Gangster ", 0, SYSTEM, BLACK, false );
 	ui_main_print( APP_VERSION, 0, SYSTEM, BLACK, true );
 }
@@ -37,7 +32,6 @@ void ui_init() {
 void ui_term() {
 	textbox_destroy( &main_text );
 	textbox_destroy( &chat_text );
-	free( statusContents );
 }
 
 void ui_fill_rect( int left, int top, int width, int height, Colour colour, bool bold ) {
@@ -205,24 +199,12 @@ void ui_draw_char( int left, int top, char c, Colour colour, bool bold, bool for
 }
 
 void ui_clear_status() {
-	statusLen = 0;
+	status.clear();
 	status_dirty = true;
 }
 
-// TODO: just cap this at like 8k
-void ui_statusAdd( const char c, const Colour fg, const bool bold ) {
-	if( ( statusLen + 1 ) * sizeof( StatusChar ) > statusCapacity ) {
-		size_t newcapacity = statusCapacity * 2;
-		StatusChar * newcontents = ( StatusChar * ) realloc( statusContents, newcapacity );
-		if( !newcontents )
-			FATAL( "REALLOC" );
-
-		statusContents = newcontents;
-		statusCapacity = newcapacity;
-	}
-
-	statusContents[ statusLen ] = { c, fg, bold };
-	statusLen++;
+void ui_statusAdd( char c, Colour fg, bool bold ) {
+	status.add( { c, fg, bold } );
 	status_dirty = true;
 }
 
@@ -232,8 +214,8 @@ void ui_draw_status() {
 
 	ui_fill_rect( 0, window_height - PADDING * 4 - fh * 2, window_width, fh + PADDING * 2, COLOUR_STATUSBG, false );
 
-	for( size_t i = 0; i < statusLen; i++ ) {
-		StatusChar sc = statusContents[ i ];
+	for( size_t i = 0; i < status.size(); i++ ) {
+		StatusChar sc = status[ i ];
 
 		int x = PADDING + i * fw;
 		int y = window_height - ( PADDING * 3 ) - fh * 2 - SPACING;

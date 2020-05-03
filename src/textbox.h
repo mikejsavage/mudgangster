@@ -16,7 +16,7 @@ struct TextBox {
 		size_t len = 0;
 	};
 
-	Line * lines;
+	Span< Line > lines;
 	size_t head;
 	size_t num_lines;
 	size_t max_lines;

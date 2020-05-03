@@ -38,13 +38,14 @@ void textbox_init( TextBox * tb, size_t scrollback ) {
 
 	// TODO: this is kinda crap
 	*tb = { };
-	tb->lines = ( TextBox::Line * ) calloc( sizeof( TextBox::Line ), scrollback );
+	tb->lines = alloc_span< TextBox::Line >( scrollback );
+	memset( tb->lines.ptr, 0, tb->lines.num_bytes() );
 	tb->num_lines = 1;
 	tb->max_lines = scrollback;
 }
 
 void textbox_destroy( TextBox * tb ) {
-	free( tb->lines );
+	free( tb->lines.ptr );
 }
 
 void textbox_add( TextBox * tb, const char * str, size_t len, Colour fg, Colour bg, bool bold ) {

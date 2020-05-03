@@ -26,6 +26,7 @@ struct TextBox {
 	size_t scroll_offset;
 
 	bool selecting;
+	bool selecting_and_mouse_moved;
 	int selection_start_col, selection_start_row;
 	int selection_end_col, selection_end_row;
 

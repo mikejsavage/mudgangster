@@ -120,6 +120,7 @@ void textbox_mouse_down( TextBox * tb, int window_x, int window_y ) {
 	int col = x / fw;
 
 	tb->selecting = true;
+	tb->selecting_and_mouse_moved = false;
 	tb->selection_start_col = col;
 	tb->selection_start_row = row;
 	tb->selection_end_col = col;
@@ -145,11 +146,18 @@ void textbox_mouse_move( TextBox * tb, int window_x, int window_y ) {
 		tb->selection_end_row = row;
 		tb->dirty = true;
 	}
+	else if( !tb->selecting_and_mouse_moved ) {
+		tb->dirty = true;
+	}
+
+	tb->selecting_and_mouse_moved = true;
 }
 
 void textbox_mouse_up( TextBox * tb, int window_x, int window_y ) {
-	if( !tb->selecting )
+	if( !tb->selecting || !tb->selecting_and_mouse_moved ) {
+		tb->selecting = false;
 		return;
+	}
 
 	int fw, fh;
 	ui_get_font_size( &fw, &fh );
@@ -338,7 +346,7 @@ void textbox_draw( TextBox * tb ) {
 
 			bool bold_fg = bold;
 			bool bold_bg = false;
-			if( tb->selecting ) {
+			if( tb->selecting && tb->selecting_and_mouse_moved ) {
 				if( inside_selection( col, rows_drawn + line_rows - row - 1, tb->selection_start_col, tb->selection_start_row, tb->selection_end_col, tb->selection_end_row ) ) {
 					swap( fg, bg );
 					swap( bold_fg, bold_bg );

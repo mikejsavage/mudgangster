@@ -5,11 +5,7 @@ local function exec( cmd )
 	return res or ""
 end
 
-local version = exec( "git tag --points-at HEAD" )
-if version == "" then
-	version = exec( "git rev-parse --short HEAD" )
-end
-
+local version = exec( "git rev-parse --short HEAD" )
 local gitversion = "#define APP_VERSION \"" .. version .. "\"\n"
 
 local r = io.open( "src/gitversion.h", "r" )

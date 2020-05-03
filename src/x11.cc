@@ -593,7 +593,6 @@ static Socket * socket_from_fd( int fd ) {
 int main() {
 	net_init();
 	ui_init();
-	input_init();
 	platform_ui_init();
 	script_init();
 
@@ -654,7 +653,6 @@ int main() {
 
 	script_term();
 	platform_ui_term();
-	input_term();
 	ui_term();
 	net_term();
 

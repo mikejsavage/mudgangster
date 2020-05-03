@@ -570,7 +570,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
 	net_init();
 	ui_init();
-	input_init();
 	script_init();
 
 	FrameMark;
@@ -583,7 +582,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	}
 
 	script_term();
-	input_term();
 	ui_term();
 	net_term();
 

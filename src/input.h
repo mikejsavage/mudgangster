@@ -2,9 +2,6 @@
 
 #include <stddef.h>
 
-void input_init();
-void input_term();
-
 void input_return();
 void input_backspace();
 void input_delete();

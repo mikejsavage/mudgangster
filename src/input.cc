@@ -23,12 +23,6 @@ static int width, height;
 
 static bool dirty = false;
 
-void input_init() {
-}
-
-void input_term() {
-}
-
 void input_return() {
 	if( input.size() > 0 ) {
 		Span< const char > last_cmd = history_count == 0 ? Span< const char >() : history[ ( history_head + history_count - 1 ) % MAX_INPUT_HISTORY ];

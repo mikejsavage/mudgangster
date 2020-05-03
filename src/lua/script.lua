@@ -13,16 +13,6 @@ else
 	ScriptsDirs = { os.getenv( "HOME" ) .. "/.mudgangster/scripts" }
 end
 
--- TODO: missing exe dir
-do
-	local paths = { }
-	for _, dir in ipairs( ScriptsDirs ) do
-		table.insert( paths, dir .. PathSeparator .. "?.lua" )
-	end
-
-	package.path = package.path .. ";" .. table.concat( paths, ";" )
-end
-
 local function loadScript( name, path, padding )
 	local function throw( err )
 		if err:match( "^" .. path ) then
@@ -118,6 +108,9 @@ local function loadScriptsFrom( dir )
 	local attr = lfs.attributes( dir )
 
 	if attr.mode == "directory" then
+		local old_package_path = package.path
+		package.path = old_package_path .. ";" .. dir .. PathSeparator .. "?.lua"
+
 		local scripts = { }
 		local maxLen = 0
 
@@ -144,6 +137,8 @@ local function loadScriptsFrom( dir )
 		for _, script in ipairs( scripts ) do
 			loadScript( script.name, script.path, maxLen )
 		end
+
+		package.path = old_package_path
 	else
 		mud.print( "#lrfailed!\n#s>     `%s' isn't a directory", dir )
 	end

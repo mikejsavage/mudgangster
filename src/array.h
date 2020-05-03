@@ -28,10 +28,10 @@ public:
 	}
 
 	void insert( const T & x, size_t pos ) {
+		ASSERT( pos <= n );
+
 		extend( 1 );
-		for( size_t i = pos + 1; i < n; i++ ) {
-			elems[ i ] = elems[ i - 1 ];
-		}
+		memmove( elems + pos + 1, elems + pos, ( n - pos - 1 ) * sizeof( T ) );
 		elems[ pos ] = x;
 	}
 
@@ -44,10 +44,8 @@ public:
 		if( n == 0 || pos >= n )
 			return false;
 
-		n--;
-		for( size_t i = pos; i < n; i++ ) {
-			elems[ i ] = elems[ i + 1 ];
-		}
+		resize( n - 1 );
+		memmove( elems + pos, elems + pos + 1, ( n - pos ) * sizeof( T ) );
 
 		return true;
 	}
@@ -83,22 +81,22 @@ public:
 	}
 
 	T & operator[]( size_t i ) {
-		assert( i < n );
+		ASSERT( i < n );
 		return elems[ i ];
 	}
 
 	const T & operator[]( size_t i ) const {
-		assert( i < n );
+		ASSERT( i < n );
 		return elems[ i ];
 	}
 
 	T & top() {
-		assert( n > 0 );
+		ASSERT( n > 0 );
 		return elems[ n - 1 ];
 	}
 
 	const T & top() const {
-		assert( n > 0 );
+		ASSERT( n > 0 );
 		return elems[ n - 1 ];
 	}
 

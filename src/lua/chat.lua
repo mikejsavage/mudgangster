@@ -114,7 +114,7 @@ local function dataHandler( client, loop, watcher )
 end
 
 function mud.chat_no_space( form, ... )
-	local named = "\n" .. chat_name .. form:format( ... )
+	local named = chat_name .. form:format( ... )
 	local data = CommandBytes.all .. named:parseColours() .. "\n\255"
 
 	for _, client in ipairs( Clients ) do
@@ -123,7 +123,7 @@ function mud.chat_no_space( form, ... )
 		end
 	end
 
-	mud.printb( "#lr%s", named )
+	mud.printb( "\n#lr%s", named )
 	handleChat()
 end
 

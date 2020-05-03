@@ -14,6 +14,8 @@
 #include "platform_ui.h"
 #include "platform_network.h"
 
+#include "libclipboard/libclipboard.h"
+
 struct Socket {
 	TCPSocket sock;
 	bool in_use;
@@ -22,6 +24,8 @@ struct Socket {
 static Socket sockets[ 128 ];
 
 static bool closing = false;
+
+static clipboard_c * clipboard;
 
 void * platform_connect( const char ** err, const char * host, int port ) {
 	size_t idx;
@@ -356,7 +360,15 @@ static void event_key_press( XEvent * xevent ) {
 		ADD_MACRO( XK_F12, "f12" );
 
 		default:
-			if( ctrl || alt ) {
+			if( ctrl && key == XK_v ) {
+				int len;
+				char * contents = clipboard_text_ex( clipboard, &len, LCB_CLIPBOARD );
+				if( contents != NULL ) {
+					input_add( contents, len );
+					free( contents );
+				}
+			}
+			else if( ctrl || alt ) {
 				script_doMacro( noShiftKeyBuffer, noShiftLen, shift, ctrl, alt );
 			}
 			else if( len > 0 ) {
@@ -532,11 +544,11 @@ void platform_ui_init() {
 
 void ui_urgent() {
 	if( !UI.has_focus ) {
-                XWMHints * hints = XGetWMHints( UI.display, UI.window );
-                hints->flags |= XUrgencyHint;
-                XSetWMHints( UI.display, UI.window, hints );
-                XFree( hints );
-        }
+		XWMHints * hints = XGetWMHints( UI.display, UI.window );
+		hints->flags |= XUrgencyHint;
+		XSetWMHints( UI.display, UI.window, hints );
+		XFree( hints );
+	}
 }
 
 int ui_display_fd() {
@@ -554,7 +566,8 @@ bool ui_set_font( const char * name, int size ) {
 }
 
 void platform_set_clipboard( const char * str, size_t len ) {
-	// TODO
+	// len includes the \0
+	clipboard_set_text_ex( clipboard, str, len - 1, LCB_CLIPBOARD );
 }
 
 void platform_ui_term() {
@@ -583,6 +596,11 @@ int main() {
 	input_init();
 	platform_ui_init();
 	script_init();
+
+	clipboard = clipboard_new( NULL );
+	if( clipboard == NULL ) {
+		FATAL( "clipboard_new" );
+	}
 
 	FrameMark;
 
@@ -631,6 +649,8 @@ int main() {
 
 		ui_handleXEvents();
 	}
+
+	clipboard_free( clipboard );
 
 	script_term();
 	platform_ui_term();

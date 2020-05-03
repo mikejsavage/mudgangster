@@ -212,7 +212,6 @@ void textbox_mouse_up( TextBox * tb, int window_x, int window_y ) {
 		const TextBox::Line & line = tb->lines[ ( tb->head + tb->num_lines - tb->scroll_offset - i ) % tb->max_lines ];
 		size_t start_offset = i == start_line ? start_line_offset : 0;
 		size_t end_offset = i == end_line ? end_line_offset : line.len;
-		printf( "%d: %zu-%zu\n", i, start_offset, end_offset );
 		// TODO: iterate over glyphs to see when ansi codes need inserting
 		if( start_offset <= line.len ) {
 			selected_length += min( line.len, end_offset ) - start_offset;
@@ -221,9 +220,6 @@ void textbox_mouse_up( TextBox * tb, int window_x, int window_y ) {
 			selected_length += sizeof( NEWLINE_STRING ) - 1;
 		}
 	}
-
-	printf( "%d+%zu to %d+%zu\n", start_line, start_line_offset, end_line, end_line_offset );
-	printf( "%zu chars\n", selected_length );
 
 	char * selected = ( char * ) malloc( selected_length );
 	selected[ selected_length - 1 ] = '\0';

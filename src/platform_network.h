@@ -28,12 +28,12 @@ struct IPv4 { u8 bytes[ 4 ]; };
 struct IPv6 { u8 bytes[ 16 ]; };
 
 struct NetAddress {
-        IPvX type;
-        union {
-                IPv4 ipv4;
-                IPv6 ipv6;
-        };
-        u16 port;
+	IPvX type;
+	union {
+		IPv4 ipv4;
+		IPv6 ipv6;
+	};
+	u16 port;
 };
 
 bool operator==( const NetAddress & lhs, const NetAddress & rhs );

@@ -64,9 +64,11 @@ void textbox_add( TextBox * tb, const char * str, size_t len, Colour fg, Colour 
 }
 
 void textbox_newline( TextBox * tb ) {
+	bool freeze = tb->scroll_offset > 0 || tb->selecting;
+
 	if( tb->num_lines < tb->max_lines ) {
 		tb->num_lines++;
-		if( tb->scroll_offset > 0 )
+		if( freeze )
 			tb->scroll_offset++;
 		else
 			tb->dirty = true;
@@ -74,7 +76,7 @@ void textbox_newline( TextBox * tb ) {
 	}
 
 	tb->head++;
-	if( tb->scroll_offset > 0 )
+	if( freeze )
 		tb->scroll_offset = min( tb->scroll_offset + 1, tb->num_lines - 1 );
 	tb->dirty = true;
 
@@ -122,6 +124,7 @@ void textbox_mouse_down( TextBox * tb, int window_x, int window_y ) {
 
 	tb->selecting = true;
 	tb->selecting_and_mouse_moved = false;
+	tb->scroll_down_after_selecting = tb->scroll_offset == 0;
 	tb->selection_start_col = col;
 	tb->selection_start_row = row;
 	tb->selection_end_col = col;
@@ -257,6 +260,9 @@ void textbox_mouse_up( TextBox * tb, int window_x, int window_y ) {
 
 	tb->selecting = false;
 	tb->dirty = true;
+
+	if( tb->scroll_down_after_selecting )
+		tb->scroll_offset = 0;
 }
 
 void textbox_set_pos( TextBox * tb, int x, int y ) {

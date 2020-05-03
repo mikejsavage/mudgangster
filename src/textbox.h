@@ -27,6 +27,7 @@ struct TextBox {
 
 	bool selecting;
 	bool selecting_and_mouse_moved;
+	bool scroll_down_after_selecting;
 	int selection_start_col, selection_start_row;
 	int selection_end_col, selection_end_row;
 

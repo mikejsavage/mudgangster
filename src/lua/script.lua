@@ -1,6 +1,8 @@
 local lfs = require( "lfs" )
 local serialize = require( "serialize" )
 
+local PathSeparator = package.config:match( "^([^\n]+)" )
+
 local ScriptsDirs
 if mud.os == "windows" then
 	ScriptsDirs = {
@@ -15,13 +17,11 @@ end
 do
 	local paths = { }
 	for _, dir in ipairs( ScriptsDirs ) do
-		table.insert( paths, dir .. "\\?.lua" )
+		table.insert( paths, dir .. PathSeparator .. "?.lua" )
 	end
 
 	package.path = package.path .. ";" .. table.concat( paths, ";" )
 end
-
-local PathSeparator = package.config:match( "^([^\n]+)" )
 
 local function loadScript( name, path, padding )
 	local function throw( err )

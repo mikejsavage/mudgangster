@@ -20,6 +20,7 @@ if config ~= "release" then
 end
 
 local platform_srcs, platform_libs
+local gcc_ldflags = config == "release" and "" or " -lpthread"
 
 if OS == "windows" then
 	require( "libs.lua" )
@@ -48,7 +49,7 @@ bin( "mudgangster", {
 	rc = "src/rc",
 
 	msvc_extra_ldflags = "gdi32.lib Ws2_32.lib",
-	gcc_extra_ldflags = "-lm -lX11 -llua",
+	gcc_extra_ldflags = "-lm -lX11 -llua" .. gcc_ldflags,
 } )
 
 obj_dependencies( "src/script.cc", "build/lua_combined.h" )

@@ -13,7 +13,7 @@ struct TextBox {
 
 	struct Line {
 		Glyph glyphs[ MAX_LINE_LENGTH ];
-		size_t len = 0;
+		size_t len;
 	};
 
 	Span< Line > lines;

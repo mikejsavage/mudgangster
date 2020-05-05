@@ -94,9 +94,9 @@ function mud.alias( command, handler, ... )
 	end
 
 	local alias = type( handler ) == "function"
-		and simpleAlias( handler, ... ) 
+		and simpleAlias( handler, ... )
 		or patternAlias( handler, ... )
-	
+
 	Aliases[ command ] = alias
 
 	return alias

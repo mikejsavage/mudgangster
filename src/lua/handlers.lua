@@ -152,6 +152,8 @@ local function handleData( data )
 
 	dataBuffer = dataBuffer .. data
 
+	-- TODO: this sucks!
+	-- can insert newlines in random places if we receive a GA followed by partial data
 	if data:match( GA ) then
 		dataBuffer = dataBuffer:gsub( "\r", "" )
 
@@ -250,7 +252,7 @@ local function handleCommand( input, hide )
 		end
 
 		mud.send( input .. "\n" )
-	end 
+	end
 end
 
 local function handleInput( input, display )

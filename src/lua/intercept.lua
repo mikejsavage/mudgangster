@@ -32,7 +32,7 @@ function mud.intercept( pattern, callback, disabled )
 			self.enabled = false
 		end,
 	}
-	
+
 	table.insert( Intercepts, intercept )
 
 	return intercept

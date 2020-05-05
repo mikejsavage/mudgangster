@@ -15,7 +15,7 @@ local function genericGags( gags )
 		function( pattern, disabled )
 			local gag = {
 				pattern = pattern,
-				
+
 				enabled = not disabled,
 
 				enable = function( self )

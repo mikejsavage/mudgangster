@@ -26,7 +26,7 @@ function mud.connect( address, port )
 	if not address then
 		if not LastAddress then
 			mud.print( "\n#s> I need an address..." )
-			
+
 			return
 		end
 

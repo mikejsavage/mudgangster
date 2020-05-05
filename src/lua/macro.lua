@@ -25,7 +25,6 @@ function mud.macro( key, callback, disabled )
 
 	assert( not Macros[ key ], "macro `%s' already registered" % key )
 
-
 	Macros[ key ] = callback
 end
 

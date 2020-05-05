@@ -1,66 +1,98 @@
+local lpeg = require( "lpeg" )
+
 local handleChat
-local chat_name = "FromDaHood"
+local chatName = "FromDaHood"
 
 local CommandBytes = {
-	name_change = "\1",
+	nameChange = "\1",
 	all = "\4",
 	pm = "\5",
 	message = "\7",
 	version = "\19",
 }
 
-local Clients = { }
+local Chats = { }
 
-local function clientFromName( name )
+local parser
+do
+	local command = lpeg.P( 1 )
+	local terminator = lpeg.P( "\255" )
+	local contents = ( 1 - terminator ) ^ 0
+	parser = lpeg.C( command ) * lpeg.C( contents ) * terminator
+end
+
+local function chatFromName( name )
 	local idx = tonumber( name )
 
 	if idx then
-		return Clients[ idx ]
+		return Chats[ idx ]
 	end
 
-	for _, client in ipairs( Clients ) do
-		if client.name:startsWith( name ) then
-			return client
+	for _, chat in ipairs( Chats ) do
+		if chat.name:startsWith( name ) then
+			return chat
 		end
 	end
 
 	return nil
 end
 
-local function dataCoro( client )
-	local data = coroutine.yield()
-	local name, handshakeLen = data:match( "^YES:(.+)\n()" )
-
-	if not name then
-		client:kill()
+local function killChat( chat )
+	if chat.state == "killed" then
 		return
 	end
 
-	client.name = name
-	client.state = "connected"
+	mud.print( "\n#s> Disconnected from %s!", chat.name )
 
-	mud.print( "\n#s> Connected to %s@%s:%s", client.name, client.address, client.port )
+	chat.state = "killed"
+	socket.close( chat.socket )
 
-	local dataBuffer = data:sub( handshakeLen )
+	for i, other in ipairs( Chats ) do
+		if other == chat then
+			table.remove( Chats, i )
+			break
+		end
+	end
+end
+
+local function dataCoro( chat )
+	local handshake = coroutine.yield()
+	local name, handshakeLen = handshake:match( "^YES:(.+)\n()" )
+
+	if not name then
+		killChat( chat )
+		return
+	end
+
+	chat.name = name
+	chat.state = "connected"
+
+	mud.print( "\n#s> Connected to %s@%s:%s", chat.name, chat.address, chat.port )
+
+	local data = handshake:sub( handshakeLen )
 
 	while true do
-		dataBuffer = dataBuffer:gsub( "(.)(.-)\255", function( command, args )
+		while true do
+			local command, args = parser:match( data )
+			if not command then
+				break
+			end
+
+			data = data:sub( args:len() + 3 )
+
 			if command == CommandBytes.all or command == CommandBytes.pm or command == CommandBytes.message then
 				local message = args:match( "^\n*(.-)\n*$" )
 
 				handleChat( message:gsub( "\r", "" ) )
 			end
+		end
 
-			return ""
-		end )
-		dataBuffer = dataBuffer .. coroutine.yield()
+		data = data .. coroutine.yield()
 	end
 end
 
-local Client = { }
-
-function Client:new( sock, address, port )
-	local client = {
+local function newChat( sock, address, port )
+	local chat = {
 		name = address .. ":" .. port,
 		socket = sock,
 
@@ -71,55 +103,35 @@ function Client:new( sock, address, port )
 		handler = coroutine.create( dataCoro ),
 	}
 
-	assert( coroutine.resume( client.handler, client ) )
+	assert( coroutine.resume( chat.handler, chat ) )
 
-	setmetatable( client, { __index = Client } )
+	table.insert( Chats, chat )
 
-	table.insert( Clients, client )
+	socket.send( sock, "CHAT:%s\n127.0.0.14050 " % chatName )
 
-	socket.send( sock, "CHAT:%s\n127.0.0.14050 " % chat_name )
-
-	return client
+	return chat
 end
 
-function Client:kill()
-	if self.state == "killed" then
-		return
-	end
-
-	mud.print( "\n#s> Disconnected from %s!", self.name )
-
-	self.state = "killed"
-	socket.close( self.socket )
-
-	for i, client in ipairs( Clients ) do
-		if client == self then
-			table.remove( Clients, i )
-			break
-		end
-	end
-end
-
-local function dataHandler( client, loop, watcher )
-	local _, err, data = client.socket:receive( "*a" )
+local function dataHandler( chat, loop, watcher )
+	local _, err, data = chat.socket:receive( "*a" )
 
 	if err == "closed" then
-		client:kill()
+		killChat( chat )
 		watcher:stop( loop )
 
 		return
 	end
 
-	assert( coroutine.resume( client.handler, data ) )
+	assert( coroutine.resume( chat.handler, data ) )
 end
 
 function mud.chat_no_space( form, ... )
-	local named = chat_name .. form:format( ... )
+	local named = chatName .. form:format( ... )
 	local data = CommandBytes.all .. named:parseColours() .. "\n\255"
 
-	for _, client in ipairs( Clients ) do
-		if client.state == "connected" then
-			socket.send( client.socket, data )
+	for _, chat in ipairs( Chats ) do
+		if chat.state == "connected" then
+			socket.send( chat.socket, data )
 		end
 	end
 
@@ -134,12 +146,12 @@ end
 local function call( address, port )
 	mud.print( "\n#s> Calling %s:%d...", address, port )
 
-	local client
+	local chat
 	local sock, err = socket.connect( address, port, function( sock, data )
 		if data then
-			assert( coroutine.resume( client.handler, data ) )
+			assert( coroutine.resume( chat.handler, data ) )
 		else
-			client:kill()
+			killChat( chat )
 		end
 	end )
 
@@ -148,8 +160,8 @@ local function call( address, port )
 		return
 	end
 
-	client = Client:new( sock, address, port )
-	socket.send( client.socket, CommandBytes.version .. "MudGangster" .. "\255" )
+	chat = newChat( sock, address, port )
+	socket.send( chat.socket, CommandBytes.version .. "MudGangster" .. "\255" )
 end
 
 mud.alias( "/call", {
@@ -162,39 +174,39 @@ mud.alias( "/call", {
 
 mud.alias( "/hang", {
 	[ "^(%S+)$" ] = function( name )
-		local client = clientFromName( name )
-		if client then
-			client:kill()
+		local chat = chatFromName( name )
+		if chat then
+			killChat( chat )
 		end
 	end,
 } )
 
-local function sendPM( client, message )
-	local named = "\n" .. chat_name .. " chats to you, '" .. message .. "'"
+local function sendPM( chat, message )
+	local named = "\n" .. chatName .. " chats to you, '" .. message .. "'"
 	local data = CommandBytes.pm .. named .. "\n\255"
 
-	socket.send( client.socket, data )
+	socket.send( chat.socket, data )
 end
 
 mud.alias( "/silentpm", {
 	[ "^(%S+)%s+(.-)$" ] = function( name, message )
-		local client = clientFromName( name )
+		local chat = chatFromName( name )
 
-		if client then
+		if chat then
 			local coloured = message:parseColours()
-			sendPM( client, coloured )
+			sendPM( chat, coloured )
 		end
 	end,
 } )
 
 mud.alias( "/pm", {
 	[ "^(%S+)%s+(.-)$" ] = function( name, message )
-		local client = clientFromName( name )
+		local chat = chatFromName( name )
 
-		if client then
+		if chat then
 			local coloured = message:parseColours()
-			sendPM( client, coloured )
-			mud.printb( "\n#lrYou chat to %s, \"%s\"", client.name, coloured )
+			sendPM( chat, coloured )
+			mud.printb( "\n#lrYou chat to %s, \"%s\"", chat.name, coloured )
 			handleChat()
 		end
 	end,
@@ -204,16 +216,16 @@ mud.alias( "/emoteto", function( args )
 end )
 
 mud.alias( "/chatname", function( name )
-	chat_name = name
+	chatName = name
 
-	local message = CommandBytes.name_change .. chat_name .. "\255"
-	for _, client in ipairs( Clients ) do
-		if client.state == "connected" then
-			socket.send( client.socket, message )
+	local message = CommandBytes.nameChange .. chatName .. "\255"
+	for _, chat in ipairs( Chats ) do
+		if chat.state == "connected" then
+			socket.send( chat.socket, message )
 		end
 	end
 
-	mud.print( "\n#s> Chat name changed to %s", chat_name )
+	mud.print( "\n#s> Chat name changed to %s", chatName )
 	handleChat()
 end )
 

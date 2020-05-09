@@ -56,38 +56,39 @@ local function killChat( chat )
 end
 
 local function dataCoro( chat )
-	local handshake = coroutine.yield()
-	local name, handshakeLen = handshake:match( "^YES:(.+)\n()" )
-
-	if not name then
-		killChat( chat )
-		return
-	end
-
-	chat.name = name
-	chat.state = "connected"
-
-	mud.print( "\n#s> Connected to %s@%s:%s", chat.name, chat.address, chat.port )
-
-	local data = handshake:sub( handshakeLen )
+	local data = ""
 
 	while true do
-		while true do
-			local command, args = parser:match( data )
-			if not command then
-				break
-			end
+		data = data .. coroutine.yield()
 
-			data = data:sub( args:len() + 3 )
+		if chat.state == "connecting" then
+			local name, len = data:match( "^YES:(.-)\n()" )
+			if name then
+				chat.name = name
+				chat.state = "connected"
 
-			if command == CommandBytes.all or command == CommandBytes.pm or command == CommandBytes.message then
-				local message = args:match( "^\n*(.-)\n*$" )
+				mud.print( "\n#s> Connected to %s@%s:%s", chat.name, chat.address, chat.port )
 
-				handleChat( message:gsub( "\r", "" ) )
+				data = data:sub( len )
 			end
 		end
 
-		data = data .. coroutine.yield()
+		if chat.state == "connected" then
+			while true do
+				local command, args = parser:match( data )
+				if not command then
+					break
+				end
+
+				data = data:sub( args:len() + 3 )
+
+				if command == CommandBytes.all or command == CommandBytes.pm or command == CommandBytes.message then
+					local message = args:match( "^\n*(.-)\n*$" )
+
+					handleChat( message:gsub( "\r", "" ) )
+				end
+			end
+		end
 	end
 end
 

@@ -148,6 +148,8 @@ local function call( address, port )
 
 		state = "connecting",
 		handler = coroutine.create( dataCoro ),
+
+		called_at = os.time(),
 	}
 
 	assert( coroutine.resume( chat.handler, chat ) )
@@ -206,9 +208,6 @@ mud.alias( "/pm", {
 	end,
 } )
 
-mud.alias( "/emoteto", function( args )
-end )
-
 mud.alias( "/chatname", function( name )
 	chatName = name
 
@@ -222,6 +221,16 @@ mud.alias( "/chatname", function( name )
 	mud.print( "\n#s> Chat name changed to %s", chatName )
 	handleChat()
 end )
+
+mud.interval( function()
+	local now = os.time()
+	for i = #Chats, 1, -1 do
+		if Chats[ i ].state == "connecting" and now - Chats[ i ].called_at >= 10 then
+			mud.print( "\n#s> No response from %s", Chats[ i ].name )
+			killChat( Chats[ i ] )
+		end
+	end
+end, 5 )
 
 return {
 	init = function( chatHandler )

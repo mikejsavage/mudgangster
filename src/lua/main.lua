@@ -26,9 +26,6 @@ local socket_api = {
 
 local socket_data_handler = require( "socket" ).init( socket_api )
 
-require( "mud" ).init( handlers.data )
-require( "chat" ).init( handlers.chat )
-
 mud.printMain = printMain
 mud.newlineMain = newlineMain
 mud.printChat = printChat
@@ -38,6 +35,9 @@ mud.urgent = urgent
 mud.now = get_time
 
 mud.last_human_input_time = mud.now()
+
+require( "mud" ).init( handlers.data )
+require( "chat" ).init( handlers.chat )
 
 mud.alias( "/font", {
 	[ "^(.-)%s+(%d+)$" ] = function( name, size )

@@ -139,7 +139,7 @@ local function call( address, port )
 		return
 	end
 
-	local chat = {
+	chat = {
 		name = address .. ":" .. port,
 		socket = sock,
 

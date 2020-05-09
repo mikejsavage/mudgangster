@@ -91,27 +91,6 @@ local function dataCoro( chat )
 	end
 end
 
-local function newChat( sock, address, port )
-	local chat = {
-		name = address .. ":" .. port,
-		socket = sock,
-
-		address = address,
-		port = port,
-
-		state = "connecting",
-		handler = coroutine.create( dataCoro ),
-	}
-
-	assert( coroutine.resume( chat.handler, chat ) )
-
-	table.insert( Chats, chat )
-
-	socket.send( sock, "CHAT:%s\n127.0.0.14050 " % chatName )
-
-	return chat
-end
-
 local function dataHandler( chat, loop, watcher )
 	local _, err, data = chat.socket:receive( "*a" )
 
@@ -160,8 +139,23 @@ local function call( address, port )
 		return
 	end
 
-	chat = newChat( sock, address, port )
-	socket.send( chat.socket, CommandBytes.version .. "MudGangster" .. "\255" )
+	local chat = {
+		name = address .. ":" .. port,
+		socket = sock,
+
+		address = address,
+		port = port,
+
+		state = "connecting",
+		handler = coroutine.create( dataCoro ),
+	}
+
+	assert( coroutine.resume( chat.handler, chat ) )
+
+	table.insert( Chats, chat )
+
+	socket.send( sock, "CHAT:%s\n127.0.0.14050 " % chatName )
+	socket.send( sock, CommandBytes.version .. "MudGangster\255" )
 end
 
 mud.alias( "/call", {

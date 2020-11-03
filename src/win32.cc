@@ -246,7 +246,7 @@ void platform_set_clipboard( const char * str, size_t len ) {
 	CloseClipboard();
 }
 
-LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
+static LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 	ZoneScoped;
 
 	switch( msg ) {
